@@ -39,6 +39,7 @@ class Settings:
 
     collection_name: str
     top_k: int
+    clear_kb_password: str
 
     @property
     def pg_connection_string(self) -> str:
@@ -65,6 +66,7 @@ def get_settings() -> Settings:
         embed_model=os.getenv("EMBED_MODEL", DEFAULT_EMBED_MODEL),
         collection_name=os.getenv("COLLECTION_NAME", "rag_default_kb"),
         top_k=int(os.getenv("TOP_K", "3")),
+        clear_kb_password=os.getenv("CLEAR_KB_PASSWORD", ""),
     )
 
 

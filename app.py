@@ -1,4 +1,6 @@
 """RAG demo：Streamlit + PostgreSQL(pgvector) + LangChain"""
+import hmac
+
 import streamlit as st
 
 from backend import chunker, db, rag_chain
@@ -120,16 +122,32 @@ with st.sidebar:
             st.rerun()
     else:
         st.warning(t["confirm_clear_warning"])
-        col1, col2 = st.columns(2)
-        if col1.button(t["confirm_clear_button"], type="primary", key="confirm_clear_kb_btn"):
-            n = db.clear_knowledge_base()
-            st.session_state["confirm_clear"] = False
-            st.session_state["messages"] = []
-            st.session_state["clear_kb_result"] = t["clear_success"].format(n=n)
-            st.rerun()
-        if col2.button(t["cancel_button"], key="cancel_clear_kb_btn"):
-            st.session_state["confirm_clear"] = False
-            st.rerun()
+        if not settings.clear_kb_password:
+            st.error(t["clear_kb_password_not_configured"])
+        else:
+            st.session_state.setdefault("clear_kb_pw_key", 0)
+            if st.session_state.pop("clear_kb_pw_wrong", False):
+                st.error(t["clear_kb_password_wrong"])
+            entered_password = st.text_input(
+                t["clear_kb_password_label"],
+                type="password",
+                key=f"clear_kb_pw_{st.session_state['clear_kb_pw_key']}",
+            )
+            col1, col2 = st.columns(2)
+            if col1.button(t["confirm_clear_button"], type="primary", key="confirm_clear_kb_btn"):
+                if hmac.compare_digest(entered_password, settings.clear_kb_password):
+                    n = db.clear_knowledge_base()
+                    st.session_state["confirm_clear"] = False
+                    st.session_state["messages"] = []
+                    st.session_state["clear_kb_result"] = t["clear_success"].format(n=n)
+                else:
+                    st.session_state["clear_kb_pw_wrong"] = True
+                st.session_state["clear_kb_pw_key"] += 1
+                st.rerun()
+            if col2.button(t["cancel_button"], key="cancel_clear_kb_btn"):
+                st.session_state["confirm_clear"] = False
+                st.session_state["clear_kb_pw_key"] += 1
+                st.rerun()
 
     if st.session_state.get("clear_kb_result"):
         st.success(st.session_state.pop("clear_kb_result"))
