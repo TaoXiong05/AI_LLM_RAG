@@ -1,0 +1,8 @@
+plan.md
+.env
+__pycache__/
+*.pyc
+.venv/
+venv/
+.streamlit/secrets.toml
+*.egg-info/

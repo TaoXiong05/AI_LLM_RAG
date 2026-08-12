@@ -1,0 +1,83 @@
+"""界面文案：默认英文，可通过侧边栏按钮切换为中文。"""
+
+STRINGS = {
+    "en": {
+        "lang_switch_button": "中文",
+        "sidebar_header": "Knowledge Base Management",
+        "upload_label": "Upload documents",
+        "process_button": "Process & Build Vector Store",
+        "skip_no_text": "Skipped {name}: no extractable text found (if this is a scanned PDF, "
+        "pypdf cannot read text from images)",
+        "skip_unsupported": "Skipped {name}: {reason}",
+        "skip_failed": "Skipped {name}: processing failed ({error})",
+        "process_success": "Done: {ok}/{total} file(s) processed, {chunks} chunk(s) total",
+        "process_all_failed": "No files were ingested successfully, see warnings above.",
+        "kb_documents_header": "Ingested Documents",
+        "kb_empty": "Knowledge base is empty",
+        "clear_kb_button": "Clear Knowledge Base",
+        "confirm_clear_warning": "Are you sure you want to clear the entire knowledge base? "
+        "This cannot be undone.",
+        "confirm_clear_button": "Confirm",
+        "cancel_button": "Cancel",
+        "clear_success": "{n} record(s) deleted",
+        "select_doc_label": "Select a document",
+        "delete_doc_button": "Delete Selected Document",
+        "confirm_delete_doc_warning": 'Delete all chunks from "{name}"? This cannot be undone.',
+        "confirm_delete_button": "Confirm Delete",
+        "delete_doc_success": 'Deleted {n} chunk(s) from "{name}"',
+        "db_error": "Database connection failed: {msg}",
+        "app_title": "📚 Document Q&A RAG Demo",
+        "app_description": "Upload PDF / DOCX / TXT files in the sidebar, then ask questions "
+        "below — answers are generated from your documents' content, with cited sources. "
+        "Built with Streamlit + PostgreSQL (pgvector) + LangChain.",
+        "privacy_notice": "This is a public demo site. Please do not upload documents "
+        "containing private, confidential, or otherwise sensitive information.",
+        "chat_input_placeholder": "Ask a question",
+        "sources_expander": "Sources",
+        "score_label": "similarity score",
+        "unknown_source": "Unknown source",
+        "empty_kb_answer": "The knowledge base is empty or no relevant content was found. "
+        "Please upload and process documents in the sidebar first.",
+        "llm_error": "Model call failed: {error}",
+    },
+    "zh": {
+        "lang_switch_button": "English",
+        "sidebar_header": "知识库管理",
+        "upload_label": "上传文档",
+        "process_button": "处理并构建向量库",
+        "skip_no_text": "跳过 {name}：未能从文件中提取到文本内容（如果是扫描件 PDF，pypdf 无法识别图片中的文字）",
+        "skip_unsupported": "跳过 {name}：{reason}",
+        "skip_failed": "跳过 {name}：处理失败（{error}）",
+        "process_success": "处理完成：{ok}/{total} 个文件，共 {chunks} 个片段",
+        "process_all_failed": "没有文件成功入库，请查看上方提示。",
+        "kb_documents_header": "已入库文档",
+        "kb_empty": "知识库为空",
+        "clear_kb_button": "清空知识库",
+        "confirm_clear_warning": "确认清空整个知识库？此操作不可撤销。",
+        "confirm_clear_button": "确认清空",
+        "cancel_button": "取消",
+        "clear_success": "已删除 {n} 条记录",
+        "select_doc_label": "选择文档",
+        "delete_doc_button": "删除选中文档",
+        "confirm_delete_doc_warning": "确认删除《{name}》的所有片段？此操作不可撤销。",
+        "confirm_delete_button": "确认删除",
+        "delete_doc_success": "已删除《{name}》的 {n} 个片段",
+        "db_error": "数据库连接失败：{msg}",
+        "app_title": "📚 文档问答 RAG Demo",
+        "app_description": "在侧边栏上传 PDF / DOCX / TXT 文件，然后在下方提问——回答会基于你上传文档的内容生成，并标注引用来源。"
+        "技术栈：Streamlit + PostgreSQL（pgvector）+ LangChain。",
+        "privacy_notice": "这是一个公开的 Demo 站点，请勿上传任何涉及隐私、机密或敏感信息的文档。",
+        "chat_input_placeholder": "请输入问题",
+        "sources_expander": "参考来源",
+        "score_label": "相似度得分",
+        "unknown_source": "未知来源",
+        "empty_kb_answer": "知识库为空或未检索到相关内容，请先在侧边栏上传并处理文档。",
+        "llm_error": "模型调用失败：{error}",
+    },
+}
+
+DEFAULT_LANG = "en"
+
+
+def get_strings(lang: str) -> dict:
+    return STRINGS.get(lang, STRINGS[DEFAULT_LANG])
