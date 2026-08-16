@@ -40,6 +40,8 @@ STRINGS = {
         "privacy_notice": "This is a public demo site. Please do not upload documents "
         "containing private, confidential, or otherwise sensitive information.",
         "chat_input_placeholder": "Ask a question",
+        "searching_status": "Query submitted — searching the knowledge base…",
+        "searching_done": "Answer ready",
         "sources_expander": "Sources",
         "score_label": "similarity score",
         "unknown_source": "Unknown source",
@@ -80,6 +82,8 @@ STRINGS = {
         "技术栈：Streamlit + PostgreSQL（pgvector）+ LangChain。",
         "privacy_notice": "这是一个公开的 Demo 站点，请勿上传任何涉及隐私、机密或敏感信息的文档。",
         "chat_input_placeholder": "请输入问题",
+        "searching_status": "问题已提交，正在检索知识库…",
+        "searching_done": "回答完成",
         "sources_expander": "参考来源",
         "score_label": "相似度得分",
         "unknown_source": "未知来源",

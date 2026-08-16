@@ -187,10 +187,15 @@ if question:
 
     with st.chat_message("assistant"):
         try:
-            stream, sources = rag_chain.answer_stream(
-                question, k=settings.top_k, lang=st.session_state["lang"]
-            )
-            full_answer = st.write_stream(stream)
+            # 等待期间显示"正在检索"动画，让用户明确知道问题已提交、AI 正在工作。
+            with st.status(t["searching_status"], expanded=False) as status:
+                stream, sources = rag_chain.answer_stream(
+                    question, k=settings.top_k, lang=st.session_state["lang"]
+                )
+                full_answer = st.write_stream(stream)
+                status.update(
+                    label=t["searching_done"], state="complete", expanded=True
+                )
         except Exception as exc:  # noqa: BLE001
             full_answer = t["llm_error"].format(error=exc)
             sources = []
