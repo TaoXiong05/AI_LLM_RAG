@@ -44,7 +44,7 @@ with st.sidebar:
     st.session_state.setdefault("uploader_key", 0)
     uploaded_files = st.file_uploader(
         t["upload_label"],
-        type=["pdf", "docx", "txt"],
+        type=["pdf", "docx", "txt", "png", "jpg", "jpeg", "webp", "bmp"],
         accept_multiple_files=True,
         key=f"uploader_{st.session_state['uploader_key']}",
     )

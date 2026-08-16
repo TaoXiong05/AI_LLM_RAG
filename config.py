@@ -21,6 +21,8 @@ except Exception:  # noqa: BLE001 - 本地没有 secrets.toml，或者不在 str
 DEFAULT_OPENAI_BASE_URL = "https://ws-wibk6xl3op0zm1sx.cn-beijing.maas.aliyuncs.com/compatible-mode/v1"
 DEFAULT_CHAT_MODEL = "qwen3.8-max"
 DEFAULT_EMBED_MODEL = "text-embedding-v3"
+# OCR 用独立的视觉模型（当前走 Google Gemini OpenAI 兼容接口）
+DEFAULT_OCR_MODEL = "gemini-3.5-flash"
 
 
 @dataclass(frozen=True)
@@ -36,6 +38,7 @@ class Settings:
     openai_api_key: str
     chat_model: str
     embed_model: str
+    ocr_model: str
 
     collection_name: str
     top_k: int
@@ -64,6 +67,7 @@ def get_settings() -> Settings:
         openai_api_key=os.getenv("OPENAI_API_KEY", ""),
         chat_model=os.getenv("CHAT_MODEL", DEFAULT_CHAT_MODEL),
         embed_model=os.getenv("EMBED_MODEL", DEFAULT_EMBED_MODEL),
+        ocr_model=os.getenv("OCR_MODEL", DEFAULT_OCR_MODEL),
         collection_name=os.getenv("COLLECTION_NAME", "rag_default_kb"),
         top_k=int(os.getenv("TOP_K", "3")),
         clear_kb_password=os.getenv("CLEAR_KB_PASSWORD", ""),

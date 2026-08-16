@@ -4,10 +4,9 @@ STRINGS = {
     "en": {
         "lang_switch_button": "中文",
         "sidebar_header": "Knowledge Base Management",
-        "upload_label": "Upload documents",
+        "upload_label": "Upload documents (PDF / DOCX / TXT / images)",
         "process_button": "Process & Build Vector Store",
-        "skip_no_text": "Skipped {name}: no extractable text found (if this is a scanned PDF, "
-        "pypdf cannot read text from images)",
+        "skip_no_text": "Skipped {name}: no text could be extracted or recognized.",
         "skip_unsupported": "Skipped {name}: {reason}",
         "skip_failed": "Skipped {name}: processing failed ({error})",
         "process_success": "Done: {ok}/{total} file(s) processed, {chunks} chunk(s) total",
@@ -52,9 +51,9 @@ STRINGS = {
     "zh": {
         "lang_switch_button": "English",
         "sidebar_header": "知识库管理",
-        "upload_label": "上传文档",
+        "upload_label": "上传文档（PDF / DOCX / TXT / 图片）",
         "process_button": "处理并构建向量库",
-        "skip_no_text": "跳过 {name}：未能从文件中提取到文本内容（如果是扫描件 PDF，pypdf 无法识别图片中的文字）",
+        "skip_no_text": "跳过 {name}：未能从文件中提取或识别到文本内容",
         "skip_unsupported": "跳过 {name}：{reason}",
         "skip_failed": "跳过 {name}：处理失败（{error}）",
         "process_success": "处理完成：{ok}/{total} 个文件，共 {chunks} 个片段",
