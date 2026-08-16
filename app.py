@@ -10,68 +10,73 @@ from i18n import DEFAULT_LANG, get_strings
 
 st.set_page_config(page_title="RAG Demo", page_icon="📚", layout="wide")
 
-# 淡淡的书本/文档线稿图案，作为知识库主题的背景水印（内嵌 SVG，浅绿描边、极低透明度）
-_BOOK_PATTERN_SVG_B64 = (
-    "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNjAiIGhlaWdodD0iMTYwIj4"
-    "KPGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMkU3RDMyIiBzdHJva2Utd2lkdGg9IjIiIG9wYWNpdHk9IjAuMDciIHN0"
-    "cm9rZS1saW5lY2FwPSJyb3VuZCI+CjxwYXRoIGQ9Ik0yMCAzMCBRMzUgMjIgNTAgMzAgTDUwIDU1IFEzNSA0NyAy"
-    "MCA1NSBaIi8+CjxwYXRoIGQ9Ik01MCAzMCBRNjUgMjIgODAgMzAgTDgwIDU1IFE2NSA0NyA1MCA1NSBaIi8+Cjxs"
-    "aW5lIHgxPSIyNyIgeTE9IjM2IiB4Mj0iNDMiIHkyPSIzMyIvPgo8bGluZSB4MT0iMjciIHkxPSI0MiIgeDI9IjQz"
-    "IiB5Mj0iMzkiLz4KPGxpbmUgeDE9IjI3IiB5MT0iNDgiIHgyPSI0MyIgeTI9IjQ1Ii8+CjxsaW5lIHgxPSI1NyIg"
-    "eTE9IjMzIiB4Mj0iNzMiIHkyPSIzNiIvPgo8bGluZSB4MT0iNTciIHkxPSIzOSIgeDI9IjczIiB5Mj0iNDIiLz4K"
-    "PGxpbmUgeDE9IjU3IiB5MT0iNDUiIHgyPSI3MyIgeTI9IjQ4Ii8+CjxyZWN0IHg9IjEwMCIgeT0iOTAiIHdpZHRo"
-    "PSIzNCIgaGVpZ2h0PSI0NCIgcng9IjMiLz4KPGxpbmUgeDE9IjEwNiIgeTE9IjEwMCIgeDI9IjEyOCIgeTI9IjEw"
-    "MCIvPgo8bGluZSB4MT0iMTA2IiB5MT0iMTA4IiB4Mj0iMTI4IiB5Mj0iMTA4Ii8+CjxsaW5lIHgxPSIxMDYiIHkx"
-    "PSIxMTYiIHgyPSIxMjIiIHkyPSIxMTYiLz4KPC9nPgo8L3N2Zz4="
-)
-
+# Notion 风格：大量留白、中性灰白配色、克制的边框，不用装饰性背景/强调色。
 st.markdown(
-    f"""
+    """
     <style>
-    [data-testid="stAppViewContainer"] {{
+    html, body, [class*="css"] {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue",
+            Helvetica, Arial, sans-serif;
+    }
+    [data-testid="stAppViewContainer"] { background-color: #FFFFFF; }
+    [data-testid="stHeader"] { background-color: transparent; }
+    [data-testid="stSidebar"] {
+        background-color: #F7F6F3;
+        border-right: 1px solid #EDECE9;
+    }
+    [data-testid="stSidebar"] h2 { font-size: 1rem; font-weight: 600; color: #37352F; }
+    .block-container { max-width: 760px; padding-top: 3rem; margin: 0 auto; }
+    h1, h2, h3 { color: #37352F; font-weight: 700; letter-spacing: -0.01em; }
+    p, li, span, label { color: #37352F; }
+    .stCaption, [data-testid="stCaptionContainer"] { color: rgba(55, 53, 47, 0.65) !important; }
+
+    [data-testid="stChatMessage"] {
+        padding: 0.7rem 0;
+        border-radius: 0;
+        border-bottom: 1px solid #EDECE9;
+        margin-bottom: 0.4rem;
+        background-color: transparent;
+    }
+
+    .stButton>button {
+        border-radius: 6px;
+        border: 1px solid #E9E9E7;
+        color: #37352F;
+        transition: background-color 0.15s ease;
+    }
+    .stButton>button:hover {
+        background-color: #F1F1EF;
+        border-color: #E9E9E7;
+        color: #37352F;
+    }
+    .stButton>button[kind="primary"] {
+        background-color: #37352F;
+        border-color: #37352F;
+        color: #FFFFFF;
+    }
+    .stButton>button[kind="primary"]:hover { background-color: #2F2E2A; }
+
+    .source-card {
+        border: 1px solid #E9E9E7;
         background-color: #FFFFFF;
-        background-image: url("data:image/svg+xml;base64,{_BOOK_PATTERN_SVG_B64}");
-        background-repeat: repeat;
-        background-size: 160px 160px;
-    }}
-    [data-testid="stHeader"] {{ background-color: transparent; }}
-    [data-testid="stSidebar"] {{
-        background-color: #E8F5E9;
-        background-image: url("data:image/svg+xml;base64,{_BOOK_PATTERN_SVG_B64}");
-        background-repeat: repeat;
-        background-size: 160px 160px;
-    }}
-    .block-container {{
-        max-width: 900px;
-        padding-top: 2rem;
-        margin: 0 auto;
-        background-color: rgba(255, 255, 255, 0.9);
-        border-radius: 18px;
-        box-shadow: 0 1px 12px rgba(46, 125, 50, 0.08);
-    }}
-    [data-testid="stChatMessage"] {{
-        padding: 0.85rem 1.1rem;
-        border-radius: 16px;
-        margin-bottom: 0.6rem;
-        background-color: #F1F8F2;
-        border: 1px solid #DCEDDC;
-    }}
-    .stButton>button {{ border-radius: 8px; }}
-    .source-card {{
-        border: 1px solid #C8E6C9;
-        background-color: #F4FBF4;
-        border-radius: 10px;
+        border-radius: 8px;
         padding: 0.6rem 0.9rem;
         margin-bottom: 0.5rem;
-    }}
-    .source-card-header {{
+        transition: box-shadow 0.15s ease;
+    }
+    .source-card:hover { box-shadow: 0 1px 6px rgba(15, 15, 15, 0.08); }
+    .source-card-header {
         display: flex;
         justify-content: space-between;
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         margin-bottom: 0.3rem;
-        opacity: 0.85;
-        color: #2E7D32;
-    }}
+        color: rgba(55, 53, 47, 0.65);
+    }
+
+    [data-testid="stExpander"] {
+        border: 1px solid #E9E9E7;
+        border-radius: 8px;
+    }
     </style>
     """,
     unsafe_allow_html=True,
