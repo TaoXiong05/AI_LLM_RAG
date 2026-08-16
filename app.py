@@ -187,15 +187,16 @@ if question:
 
     with st.chat_message("assistant"):
         try:
-            # 等待期间显示"正在检索"动画，让用户明确知道问题已提交、AI 正在工作。
+            # 1) 检索阶段：显示"正在检索"动画。
             with st.status(t["searching_status"], expanded=False) as status:
-                stream, sources = rag_chain.answer_stream(
-                    question, k=settings.top_k, lang=st.session_state["lang"]
-                )
-                full_answer = st.write_stream(stream)
-                status.update(
-                    label=t["searching_done"], state="complete", expanded=True
-                )
+                sources = rag_chain.retrieve(question, k=settings.top_k)
+                status.update(label=t["searching_done"], state="complete", expanded=False)
+
+            # 2) 生成阶段：直接在聊天区逐字流式输出（类似 DeepSeek/ChatGPT）。
+            stream = rag_chain.generate(
+                question, sources, lang=st.session_state["lang"]
+            )
+            full_answer = st.write_stream(stream)
         except Exception as exc:  # noqa: BLE001
             full_answer = t["llm_error"].format(error=exc)
             sources = []

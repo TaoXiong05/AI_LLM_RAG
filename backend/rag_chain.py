@@ -83,14 +83,15 @@ def build_messages(question: str, chunks: list[tuple[Document, float]], lang: st
     return _build_messages(question, context or None, lang)
 
 
-def answer_stream(
-    question: str, k: int | None = None, lang: str = "en"
-) -> tuple[Iterator[str], list[tuple[Document, float]]]:
-    chunks = db.similarity_search(question, k=k)
+def retrieve(question: str, k: int | None = None) -> list[tuple[Document, float]]:
+    """第一步：在知识库中检索相关片段（同步、较快）。"""
+    return db.similarity_search(question, k=k)
 
+
+def generate(question: str, chunks: list[tuple[Document, float]], lang: str = "en") -> Iterator[str]:
+    """第二步：基于检索结果流式生成回答（逐字输出）。chunks 为空时走网络搜索兜底。"""
     if not chunks:
-        # 未命中任何资料：先输出固定声明，再由模型基于自身知识作答（网络搜索口径）
-        return _fallback_stream(question, lang), []
+        return _fallback_stream(question, lang)
 
     messages = build_messages(question, chunks, lang)
 
@@ -99,7 +100,7 @@ def answer_stream(
             if piece.content:
                 yield piece.content
 
-    return _gen(), chunks
+    return _gen()
 
 
 def _fallback_stream(question: str, lang: str) -> Iterator[str]:
