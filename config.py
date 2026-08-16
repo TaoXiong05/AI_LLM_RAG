@@ -5,7 +5,7 @@ from urllib.parse import quote_plus
 
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
 try:
     # Streamlit Community Cloud 没有 .env 文件，配置通过它的 Secrets 面板（st.secrets）注入，

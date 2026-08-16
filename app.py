@@ -188,7 +188,7 @@ if question:
     with st.chat_message("assistant"):
         try:
             stream, sources = rag_chain.answer_stream(
-                question, k=settings.top_k, empty_message=t["empty_kb_answer"]
+                question, k=settings.top_k, lang=st.session_state["lang"]
             )
             full_answer = st.write_stream(stream)
         except Exception as exc:  # noqa: BLE001
