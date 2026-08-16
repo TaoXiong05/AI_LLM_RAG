@@ -30,6 +30,9 @@ STRINGS = {
         "confirm_delete_button": "Confirm Delete",
         "delete_doc_success": 'Deleted {n} chunk(s) from "{name}"',
         "db_error": "Database connection failed: {msg}",
+        "api_key_error": "OPENAI_API_KEY is missing or invalid (it must be plain ASCII). "
+        "Check your .env / Secrets — make sure the placeholder text was replaced with your "
+        "real API key.",
         "app_title": "📚 Document Q&A RAG Demo",
         "app_description": "Upload PDF / DOCX / TXT files in the sidebar, then ask questions "
         "below — answers are generated from your documents' content, with cited sources. "
@@ -70,6 +73,8 @@ STRINGS = {
         "confirm_delete_button": "确认删除",
         "delete_doc_success": "已删除《{name}》的 {n} 个片段",
         "db_error": "数据库连接失败：{msg}",
+        "api_key_error": "OPENAI_API_KEY 未配置或包含非法字符（必须是纯 ASCII）。请检查 .env / Secrets"
+        "里的取值，确认占位文字已经替换成你真实的 API Key。",
         "app_title": "📚 文档问答 RAG Demo",
         "app_description": "在侧边栏上传 PDF / DOCX / TXT 文件，然后在下方提问——回答会基于你上传文档的内容生成，并标注引用来源。"
         "技术栈：Streamlit + PostgreSQL（pgvector）+ LangChain。",

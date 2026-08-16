@@ -28,6 +28,10 @@ if not ok:
     st.error(t["db_error"].format(msg=err_msg))
     st.stop()
 
+if not settings.openai_api_key or not settings.openai_api_key.isascii():
+    st.error(t["api_key_error"])
+    st.stop()
+
 
 # ---------- 侧边栏：文档上传与知识库管理 ----------
 with st.sidebar:
