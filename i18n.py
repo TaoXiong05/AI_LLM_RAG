@@ -44,7 +44,7 @@ STRINGS = {
         "Check your .env / Secrets — make sure the placeholder text was replaced with your "
         "real API key.",
         "app_title": "📚 Document Q&A RAG Demo",
-        "app_description": "Upload PDF / DOCX / TXT files in the sidebar, then ask questions "
+        "app_description": "Upload PDF / DOCX / TXT / IMAGE files in the sidebar, then ask questions "
         "below — answers are generated from your documents' content, with cited sources. "
         "Built with Streamlit + PostgreSQL (pgvector) + LangChain.",
         "privacy_notice": "This is a public demo site. Please do not upload documents "
