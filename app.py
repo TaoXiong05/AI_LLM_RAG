@@ -10,29 +10,68 @@ from i18n import DEFAULT_LANG, get_strings
 
 st.set_page_config(page_title="RAG Demo", page_icon="📚", layout="wide")
 
+# 淡淡的书本/文档线稿图案，作为知识库主题的背景水印（内嵌 SVG，浅绿描边、极低透明度）
+_BOOK_PATTERN_SVG_B64 = (
+    "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNjAiIGhlaWdodD0iMTYwIj4"
+    "KPGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMkU3RDMyIiBzdHJva2Utd2lkdGg9IjIiIG9wYWNpdHk9IjAuMDciIHN0"
+    "cm9rZS1saW5lY2FwPSJyb3VuZCI+CjxwYXRoIGQ9Ik0yMCAzMCBRMzUgMjIgNTAgMzAgTDUwIDU1IFEzNSA0NyAy"
+    "MCA1NSBaIi8+CjxwYXRoIGQ9Ik01MCAzMCBRNjUgMjIgODAgMzAgTDgwIDU1IFE2NSA0NyA1MCA1NSBaIi8+Cjxs"
+    "aW5lIHgxPSIyNyIgeTE9IjM2IiB4Mj0iNDMiIHkyPSIzMyIvPgo8bGluZSB4MT0iMjciIHkxPSI0MiIgeDI9IjQz"
+    "IiB5Mj0iMzkiLz4KPGxpbmUgeDE9IjI3IiB5MT0iNDgiIHgyPSI0MyIgeTI9IjQ1Ii8+CjxsaW5lIHgxPSI1NyIg"
+    "eTE9IjMzIiB4Mj0iNzMiIHkyPSIzNiIvPgo8bGluZSB4MT0iNTciIHkxPSIzOSIgeDI9IjczIiB5Mj0iNDIiLz4K"
+    "PGxpbmUgeDE9IjU3IiB5MT0iNDUiIHgyPSI3MyIgeTI9IjQ4Ii8+CjxyZWN0IHg9IjEwMCIgeT0iOTAiIHdpZHRo"
+    "PSIzNCIgaGVpZ2h0PSI0NCIgcng9IjMiLz4KPGxpbmUgeDE9IjEwNiIgeTE9IjEwMCIgeDI9IjEyOCIgeTI9IjEw"
+    "MCIvPgo8bGluZSB4MT0iMTA2IiB5MT0iMTA4IiB4Mj0iMTI4IiB5Mj0iMTA4Ii8+CjxsaW5lIHgxPSIxMDYiIHkx"
+    "PSIxMTYiIHgyPSIxMjIiIHkyPSIxMTYiLz4KPC9nPgo8L3N2Zz4="
+)
+
 st.markdown(
-    """
+    f"""
     <style>
-    .block-container { max-width: 900px; padding-top: 2.5rem; margin: 0 auto; }
-    [data-testid="stChatMessage"] {
+    [data-testid="stAppViewContainer"] {{
+        background-color: #FFFFFF;
+        background-image: url("data:image/svg+xml;base64,{_BOOK_PATTERN_SVG_B64}");
+        background-repeat: repeat;
+        background-size: 160px 160px;
+    }}
+    [data-testid="stHeader"] {{ background-color: transparent; }}
+    [data-testid="stSidebar"] {{
+        background-color: #E8F5E9;
+        background-image: url("data:image/svg+xml;base64,{_BOOK_PATTERN_SVG_B64}");
+        background-repeat: repeat;
+        background-size: 160px 160px;
+    }}
+    .block-container {{
+        max-width: 900px;
+        padding-top: 2rem;
+        margin: 0 auto;
+        background-color: rgba(255, 255, 255, 0.9);
+        border-radius: 18px;
+        box-shadow: 0 1px 12px rgba(46, 125, 50, 0.08);
+    }}
+    [data-testid="stChatMessage"] {{
         padding: 0.85rem 1.1rem;
         border-radius: 16px;
         margin-bottom: 0.6rem;
-    }
-    .stButton>button { border-radius: 8px; }
-    .source-card {
-        border: 1px solid rgba(128, 128, 128, 0.25);
+        background-color: #F1F8F2;
+        border: 1px solid #DCEDDC;
+    }}
+    .stButton>button {{ border-radius: 8px; }}
+    .source-card {{
+        border: 1px solid #C8E6C9;
+        background-color: #F4FBF4;
         border-radius: 10px;
         padding: 0.6rem 0.9rem;
         margin-bottom: 0.5rem;
-    }
-    .source-card-header {
+    }}
+    .source-card-header {{
         display: flex;
         justify-content: space-between;
         font-size: 0.85rem;
         margin-bottom: 0.3rem;
         opacity: 0.85;
-    }
+        color: #2E7D32;
+    }}
     </style>
     """,
     unsafe_allow_html=True,
