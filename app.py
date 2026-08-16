@@ -25,10 +25,17 @@ st.markdown(
         border-right: 1px solid #EDECE9;
     }
     [data-testid="stSidebar"] h2 { font-size: 1rem; font-weight: 600; color: #37352F; }
-    .block-container { max-width: 760px; padding-top: 3rem; margin: 0 auto; }
+    .block-container { max-width: 1100px; padding-top: 3rem; margin: 0 auto; }
+    [data-testid="stBottomBlockContainer"] { max-width: 1100px; margin: 0 auto; }
     h1, h2, h3 { color: #37352F; font-weight: 700; letter-spacing: -0.01em; }
     p, li, span, label { color: #37352F; }
-    .stCaption, [data-testid="stCaptionContainer"] { color: rgba(55, 53, 47, 0.65) !important; }
+    .stCaption, [data-testid="stCaptionContainer"] { color: rgba(55, 53, 47, 0.75) !important; }
+    .app-subtitle {
+        color: #57554E;
+        font-size: 1rem;
+        line-height: 1.6;
+        margin: 0.2rem 0 1rem 0;
+    }
 
     [data-testid="stChatMessage"] {
         padding: 0.7rem 0;
@@ -235,7 +242,7 @@ with st.sidebar:
 
 # ---------- 主区：聊天界面 ----------
 st.markdown(f"<h1 style='margin-bottom:0.2rem'>{t['app_title']}</h1>", unsafe_allow_html=True)
-st.caption(t["app_description"])
+st.markdown(f'<p class="app-subtitle">{t["app_description"]}</p>', unsafe_allow_html=True)
 st.info(f"⚠️ {t['privacy_notice']}", icon=None)
 
 st.session_state.setdefault("messages", [])
