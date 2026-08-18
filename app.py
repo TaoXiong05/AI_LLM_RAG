@@ -1,5 +1,6 @@
 """RAG demo：Streamlit + PostgreSQL(pgvector) + LangChain"""
 import hmac
+from html import escape
 
 import streamlit as st
 
@@ -10,80 +11,159 @@ from i18n import DEFAULT_LANG, get_strings
 
 st.set_page_config(page_title="RAG Demo", page_icon="📚", layout="wide")
 
-# Notion 风格：大量留白、中性灰白配色、克制的边框，不用装饰性背景/强调色。
+# ---------------------------------------------------------------------------
+# 视觉主题："卡片目录 / 阅览室" —— 深色橡木抽屉侧栏用于归档文档，
+# 主区分为对话桌面 + 常驻的引用索引卡侧栏，让检索到的原文片段
+# 始终占据实际版面，而不是折叠在每条消息底部的 expander 里。
+# ---------------------------------------------------------------------------
 st.markdown(
     """
     <style>
-    html, body, [class*="css"] {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue",
-            Helvetica, Arial, sans-serif;
+    @import url('https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+    :root {
+        --paper: #F1E8D6;
+        --card: #FBF7EC;
+        --ink: #2A2116;
+        --ink-muted: rgba(42, 33, 22, 0.64);
+        --ink-faint: rgba(42, 33, 22, 0.42);
+        --drawer: #E4D3A9;
+        --drawer-panel: #D8C08D;
+        --drawer-border: #A9824F;
+        --brass: #93701F;
+        --brass-bright: #B08A2E;
+        --rule: #7FA0AC;
+        --rule-faint: rgba(127, 160, 172, 0.32);
+        --danger: #A23E2E;
+        --success: #4B7052;
     }
-    [data-testid="stAppViewContainer"] { background-color: #FFFFFF; }
+
+    html, body, [class*="css"] { font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif; }
+    h1, h2, h3, h4 { font-family: 'Libre Caslon Text', Georgia, serif; color: var(--ink); font-weight: 700; letter-spacing: -0.01em; }
+    p, li, span, label, div { color: var(--ink); }
+    code, .mono { font-family: 'IBM Plex Mono', monospace; }
+
+    [data-testid="stAppViewContainer"] { background-color: var(--paper); }
     [data-testid="stHeader"] { background-color: transparent; }
-    [data-testid="stSidebar"] {
-        background-color: #F7F6F3;
-        border-right: 1px solid #EDECE9;
+    [data-testid="stMainBlockContainer"], .block-container { max-width: 1500px; padding-top: 2rem; padding-bottom: 6rem; }
+
+    /* ---- 侧栏：与主区同色系的橡木抽屉（暖调浅棕，而非深色断层）---- */
+    [data-testid="stSidebar"] { background-color: var(--drawer); border-right: 1px solid var(--drawer-border); }
+    [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
+        font-family: 'Libre Caslon Text', Georgia, serif; color: var(--ink) !important; font-size: 1.15rem;
     }
-    [data-testid="stSidebar"] h2 { font-size: 1rem; font-weight: 600; color: #37352F; }
-    .block-container { max-width: 1100px; padding-top: 3rem; margin: 0 auto; }
-    [data-testid="stBottomBlockContainer"] { max-width: 1100px; margin: 0 auto; }
-    h1, h2, h3 { color: #37352F; font-weight: 700; letter-spacing: -0.01em; }
-    p, li, span, label { color: #37352F; }
-    .stCaption, [data-testid="stCaptionContainer"] { color: rgba(55, 53, 47, 0.75) !important; }
-    .app-subtitle {
-        color: #57554E;
-        font-size: 1rem;
-        line-height: 1.6;
-        margin: 0.2rem 0 1rem 0;
+    .drawer-eyebrow {
+        font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; letter-spacing: 0.14em;
+        text-transform: uppercase; color: var(--brass); margin: 0 0 0.15rem 0;
+    }
+    .drawer-tab, .drawer-tab * {
+        font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; letter-spacing: 0.1em;
+        text-transform: uppercase; color: var(--brass) !important; border-bottom: none;
+    }
+    .drawer-tab {
+        border-bottom: 1px solid var(--drawer-border);
+        padding-bottom: 0.35rem; margin-bottom: 0.7rem; display: flex; justify-content: space-between; align-items: center;
+    }
+    [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {
+        background-color: var(--card); border: 1px solid var(--drawer-border) !important; border-radius: 10px;
+    }
+    [data-testid="stSidebar"] [data-testid="stExpander"] { background-color: var(--card); border: 1px solid var(--drawer-border); border-radius: 10px; }
+    [data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] {
+        background-color: var(--drawer-panel); border: 1.5px dashed var(--drawer-border); border-radius: 8px;
+    }
+    [data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] button {
+        background-color: var(--card); border: 1px solid var(--brass); color: var(--brass);
+    }
+    [data-testid="stSidebar"] .stButton>button {
+        background-color: var(--card); border: 1px solid var(--drawer-border); color: var(--ink);
+        border-radius: 6px; font-family: 'IBM Plex Sans', sans-serif; white-space: nowrap;
+    }
+    [data-testid="stSidebar"] .stButton>button:hover { border-color: var(--brass); color: var(--brass); }
+    [data-testid="stSidebar"] .stButton>button[kind="primary"] { background-color: var(--brass); border-color: var(--brass); color: var(--card); font-weight: 600; }
+    [data-testid="stSidebar"] .stButton>button[kind="primary"]:hover { background-color: var(--brass-bright); border-color: var(--brass-bright); }
+    [data-testid="stSidebar"] [data-baseweb="select"] > div,
+    [data-testid="stSidebar"] input[type="text"], [data-testid="stSidebar"] input[type="password"] {
+        background-color: var(--card) !important; color: var(--ink) !important; border-color: var(--drawer-border) !important;
+    }
+    [data-testid="stSidebar"] [data-testid="stAlert"] { border-radius: 8px; }
+    [data-testid="stSidebar"] [data-testid="stDataFrame"] { border: 1px solid var(--drawer-border); border-radius: 8px; overflow: hidden; }
+
+    /* ---- 主区通用 ---- */
+    .stButton>button { border-radius: 8px; border: 1px solid rgba(42,33,22,0.16); color: var(--ink); background-color: var(--card); transition: all 0.15s ease; }
+    .stButton>button:hover { border-color: var(--brass); color: var(--brass); background-color: var(--card); }
+    .stButton>button[kind="primary"] { background-color: var(--brass); border-color: var(--brass); color: var(--card); font-weight: 600; }
+    .stButton>button[kind="primary"]:hover { background-color: var(--brass-bright); border-color: var(--brass-bright); }
+
+    [data-testid="stAlert"] { border-radius: 8px; border: 1px solid rgba(42,33,22,0.1); }
+    [data-testid="stExpander"] { border: 1px solid rgba(42,33,22,0.14); border-radius: 10px; background-color: var(--card); }
+
+    /* ---- 顶部标牌 ---- */
+    .desk-plate {
+        display: flex; justify-content: space-between; align-items: flex-end; gap: 1.5rem;
+        border-bottom: 2px solid var(--ink); padding-bottom: 1rem; margin-bottom: 1.6rem; flex-wrap: wrap;
+    }
+    .desk-eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--brass); margin-bottom: 0.3rem; }
+    .desk-title { font-size: 2rem; margin: 0; }
+    .desk-subtitle { color: var(--ink-muted); font-size: 0.94rem; line-height: 1.6; margin: 0.35rem 0 0 0; max-width: 46rem; }
+    .desk-stats { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+    .desk-stat-chip {
+        font-family: 'IBM Plex Mono', monospace; font-size: 0.76rem; color: var(--ink);
+        background-color: var(--card); border: 1px solid rgba(42,33,22,0.14); border-radius: 999px; padding: 0.35rem 0.85rem;
+        white-space: nowrap;
     }
 
+    /* ---- 聊天消息 ---- */
     [data-testid="stChatMessage"] {
-        padding: 0.7rem 0;
-        border-radius: 0;
-        border-bottom: 1px solid #EDECE9;
-        margin-bottom: 0.4rem;
-        background-color: transparent;
+        background-color: var(--card); border: 1px solid rgba(42,33,22,0.1); border-radius: 12px;
+        padding: 0.9rem 1.1rem; margin-bottom: 0.75rem;
+    }
+    [data-testid="stChatInput"], [data-testid="stBottomBlockContainer"] { background-color: transparent; }
+    [data-testid="stBottomBlockContainer"] { max-width: 1500px; margin: 0 auto; }
+    [data-testid="stChatInput"] textarea { background-color: var(--card) !important; }
+    .history-cite { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--ink-faint); margin-top: 0.35rem; }
+
+    /* ---- 目录索引卡（右侧引用栏的招牌元素）---- */
+    .catalog-card {
+        position: relative; background-color: var(--card);
+        background-image: repeating-linear-gradient(var(--card) 0 26px, var(--rule-faint) 26px 27px);
+        border: 1px solid rgba(42,33,22,0.14); border-left: 3px solid var(--brass);
+        border-radius: 10px; padding: 0.85rem 1rem 0.85rem 2rem; margin-bottom: 0.9rem;
+    }
+    .catalog-card::before {
+        content: ""; position: absolute; left: 0.8rem; top: 1rem; width: 9px; height: 9px;
+        border-radius: 50%; background-color: var(--paper); border: 1.5px solid var(--rule);
+    }
+    .catalog-card-tab {
+        position: absolute; top: -9px; right: 12px; background-color: var(--brass); color: var(--card);
+        font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.03em;
+        padding: 2px 8px; border-radius: 4px;
+    }
+    .catalog-card-name { font-weight: 600; font-size: 0.9rem; padding-right: 2.2rem; margin-bottom: 0.15rem; word-break: break-word; }
+    .catalog-card-meta { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--ink-faint); margin-bottom: 0.55rem; }
+    .catalog-card-excerpt {
+        font-size: 0.82rem; line-height: 1.55; color: var(--ink-muted); white-space: pre-wrap;
+        max-height: 7.2em; overflow-y: auto; padding-right: 0.2rem;
     }
 
-    .stButton>button {
-        border-radius: 6px;
-        border: 1px solid #E9E9E7;
-        color: #37352F;
-        transition: background-color 0.15s ease;
+    /* ---- 目录索引统计（右侧栏闲置状态）---- */
+    .index-idle {
+        background-color: var(--card); border: 1px solid rgba(42,33,22,0.14); border-radius: 12px;
+        padding: 1.1rem 1.2rem; margin-bottom: 1rem;
     }
-    .stButton>button:hover {
-        background-color: #F1F1EF;
-        border-color: #E9E9E7;
-        color: #37352F;
+    .index-idle-title { font-family: 'Libre Caslon Text', Georgia, serif; font-size: 1.05rem; margin-bottom: 0.2rem; }
+    .index-idle-hint { font-size: 0.82rem; color: var(--ink-muted); line-height: 1.55; }
+    .index-stat-row { display: flex; gap: 0.7rem; margin: 0.9rem 0; }
+    .index-stat { flex: 1; background-color: var(--paper); border-radius: 8px; padding: 0.6rem 0.7rem; }
+    .index-stat-value { font-family: 'IBM Plex Mono', monospace; font-size: 1.3rem; font-weight: 600; color: var(--brass); line-height: 1; }
+    .index-stat-label { font-size: 0.7rem; color: var(--ink-muted); margin-top: 0.25rem; }
+    .index-doc-chip {
+        display: flex; justify-content: space-between; gap: 0.6rem; font-size: 0.78rem;
+        border-top: 1px solid rgba(42,33,22,0.1); padding: 0.4rem 0; color: var(--ink-muted);
     }
-    .stButton>button[kind="primary"] {
-        background-color: #37352F;
-        border-color: #37352F;
-        color: #FFFFFF;
-    }
-    .stButton>button[kind="primary"]:hover { background-color: #2F2E2A; }
+    .index-doc-chip b { color: var(--ink); font-weight: 500; }
+    .index-doc-chip span:last-child { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; white-space: nowrap; }
 
-    .source-card {
-        border: 1px solid #E9E9E7;
-        background-color: #FFFFFF;
-        border-radius: 8px;
-        padding: 0.6rem 0.9rem;
-        margin-bottom: 0.5rem;
-        transition: box-shadow 0.15s ease;
-    }
-    .source-card:hover { box-shadow: 0 1px 6px rgba(15, 15, 15, 0.08); }
-    .source-card-header {
-        display: flex;
-        justify-content: space-between;
-        font-size: 0.8rem;
-        margin-bottom: 0.3rem;
-        color: rgba(55, 53, 47, 0.65);
-    }
-
-    [data-testid="stExpander"] {
-        border: 1px solid #E9E9E7;
-        border-radius: 8px;
-    }
+    .rail-sticky { position: sticky; top: 1rem; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -111,17 +191,23 @@ if not settings.openai_api_key or not settings.openai_api_key.isascii():
     st.error(t["api_key_error"])
     st.stop()
 
+kb_sources = db.list_sources()
+kb_doc_count = len(kb_sources)
+kb_chunk_count = sum(s["chunk_count"] for s in kb_sources)
 
-# ---------- 侧边栏：文档上传与知识库管理 ----------
+
+# ---------- 侧边栏：文档上传与知识库管理（"抽屉"）----------
 with st.sidebar:
-    header_col, lang_col = st.columns([3, 1])
-    header_col.header(t["sidebar_header"])
+    header_col, lang_col = st.columns([2.1, 1.1])
+    with header_col:
+        st.markdown(f'<div class="drawer-eyebrow">{t["sidebar_eyebrow"]}</div>', unsafe_allow_html=True)
+        st.header(t["sidebar_header"])
     if lang_col.button(t["lang_switch_button"]):
         st.session_state["lang"] = "zh" if st.session_state["lang"] == "en" else "en"
         st.rerun()
 
     with st.container(border=True):
-        st.markdown(f"**{t['upload_section_header']}**")
+        st.markdown(f'<div class="drawer-tab"><span>{t["upload_section_header"]}</span></div>', unsafe_allow_html=True)
         st.session_state.setdefault("uploader_key", 0)
         uploaded_files = st.file_uploader(
             t["upload_label"],
@@ -131,7 +217,7 @@ with st.sidebar:
             label_visibility="collapsed",
         )
 
-        if st.button(t["process_button"], disabled=not uploaded_files, use_container_width=True):
+        if st.button(t["process_button"], disabled=not uploaded_files, use_container_width=True, type="primary"):
             total = len(uploaded_files)
             progress = st.progress(0)
             ok_count = 0
@@ -170,13 +256,15 @@ with st.sidebar:
             getattr(st, level)(msg)
 
     with st.container(border=True):
-        sources = db.list_sources()
-        st.markdown(f"**{t['kb_section_header']}**")
-        if sources:
-            st.caption(t["kb_doc_count"].format(n=len(sources)))
-            st.dataframe(sources, hide_index=True, use_container_width=True)
+        st.markdown(
+            f'<div class="drawer-tab"><span>{t["kb_section_header"]}</span>'
+            f'<span>{kb_doc_count}</span></div>',
+            unsafe_allow_html=True,
+        )
+        if kb_sources:
+            st.dataframe(kb_sources, hide_index=True, use_container_width=True)
 
-            source_names = [s["source"] for s in sources]
+            source_names = [s["source"] for s in kb_sources]
             selected_source = st.selectbox(t["select_doc_label"], source_names, key="selected_source")
 
             if not st.session_state.get("confirm_delete_doc"):
@@ -240,76 +328,139 @@ with st.sidebar:
             st.success(st.session_state.pop("clear_kb_result"))
 
 
-# ---------- 主区：聊天界面 ----------
-st.markdown(f"<h1 style='margin-bottom:0.2rem'>{t['app_title']}</h1>", unsafe_allow_html=True)
-st.markdown(f'<p class="app-subtitle">{t["app_description"]}</p>', unsafe_allow_html=True)
+# ---------- 主区：书桌标牌 ----------
+st.markdown(
+    f"""
+    <div class="desk-plate">
+        <div>
+            <div class="desk-eyebrow">{t['app_eyebrow']}</div>
+            <h1 class="desk-title">{t['app_title']}</h1>
+            <p class="desk-subtitle">{t['app_description']}</p>
+        </div>
+        <div class="desk-stats">
+            <span class="desk-stat-chip">{t['kb_doc_count'].format(n=kb_doc_count)}</span>
+            <span class="desk-stat-chip">{t['kb_chunk_count'].format(n=kb_chunk_count)}</span>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 st.info(f"⚠️ {t['privacy_notice']}", icon=None)
 
 st.session_state.setdefault("messages", [])
 
-
-def render_sources(sources: list[tuple]) -> None:
-    with st.expander(t["sources_expander"]):
-        for doc, score in sources:
-            source = doc.metadata.get("source", t["unknown_source"])
-            st.markdown(
-                f"""<div class="source-card">
-                <div class="source-card-header">
-                    <span>📄 <b>{source}</b></span>
-                    <span>{t['score_label']}: {score:.4f}</span>
-                </div>
-                </div>""",
-                unsafe_allow_html=True,
-            )
-            st.text(doc.page_content)
-
-
-# 提问来源：聊天输入框 或 下面点击的示例问题
-pending_question = st.session_state.pop("pending_question", None)
-
-if not st.session_state["messages"] and not pending_question:
-    st.markdown(f"##### {t['empty_state_title']}")
-    st.caption(t["empty_state_subtitle"])
-    example_cols = st.columns(len(t["example_questions"]))
-    for col, example in zip(example_cols, t["example_questions"]):
-        if col.button(example, key=f"example_{example}", use_container_width=True):
-            st.session_state["pending_question"] = example
-            st.rerun()
-
-for msg in st.session_state["messages"]:
-    avatar = "🧑" if msg["role"] == "user" else "🤖"
-    with st.chat_message(msg["role"], avatar=avatar):
-        st.markdown(msg["content"])
-        if msg.get("sources"):
-            render_sources(msg["sources"])
-
+# 提问来源：聊天输入框 或 下面点击的示例问题。
+# st.chat_input 在根层级调用时会自动固定在视口底部，与代码书写位置无关，
+# 因此这里提前拿到取值，方便在渲染两栏布局之前就把新问题检索完毕。
 typed_question = st.chat_input(t["chat_input_placeholder"])
+pending_question = st.session_state.pop("pending_question", None)
 question = pending_question or typed_question
+
+new_sources: list[tuple] | None = None
 if question:
-    st.session_state["messages"].append({"role": "user", "content": question, "sources": None})
-    with st.chat_message("user", avatar="🧑"):
-        st.markdown(question)
+    with st.spinner(t["searching_status"]):
+        new_sources = rag_chain.retrieve(question, k=settings.top_k)
 
-    with st.chat_message("assistant", avatar="🤖"):
-        try:
-            # 1) 检索阶段：显示"正在检索"动画。
-            with st.status(t["searching_status"], expanded=False) as status:
-                sources = rag_chain.retrieve(question, k=settings.top_k)
-                status.update(label=t["searching_done"], state="complete", expanded=False)
 
-            # 2) 生成阶段：直接在聊天区逐字流式输出（类似 DeepSeek/ChatGPT）。
-            stream = rag_chain.generate(
-                question, sources, lang=st.session_state["lang"]
-            )
-            full_answer = st.write_stream(stream)
-        except Exception as exc:  # noqa: BLE001
-            full_answer = t["llm_error"].format(error=exc)
-            sources = []
-            st.error(full_answer)
+def render_catalog_cards(sources: list[tuple]) -> None:
+    """右侧引用栏的招牌样式：把检索到的片段渲染成带孔洞与铜牌编号的索引卡。"""
+    for i, (doc, score) in enumerate(sources, 1):
+        source = escape(doc.metadata.get("source", t["unknown_source"]))
+        excerpt = escape(doc.page_content)
+        st.markdown(
+            f"""<div class="catalog-card">
+                <div class="catalog-card-tab">{i:02d}</div>
+                <div class="catalog-card-name">📄 {source}</div>
+                <div class="catalog-card-meta">{t['score_label']} · {score:.4f}</div>
+                <div class="catalog-card-excerpt">{excerpt}</div>
+            </div>""",
+            unsafe_allow_html=True,
+        )
 
-        if sources:
-            render_sources(sources)
 
-    st.session_state["messages"].append(
-        {"role": "assistant", "content": full_answer, "sources": sources}
-    )
+chat_col, rail_col = st.columns([0.62, 0.38], gap="large")
+
+with chat_col:
+    if not st.session_state["messages"] and not question:
+        st.markdown(f"##### {t['empty_state_title']}")
+        st.caption(t["empty_state_subtitle"])
+        example_cols = st.columns(len(t["example_questions"]))
+        for col, example in zip(example_cols, t["example_questions"]):
+            if col.button(example, key=f"example_{example}", use_container_width=True):
+                st.session_state["pending_question"] = example
+                st.rerun()
+
+    for msg in st.session_state["messages"]:
+        avatar = "🧑" if msg["role"] == "user" else "🤖"
+        with st.chat_message(msg["role"], avatar=avatar):
+            st.markdown(msg["content"])
+            if msg.get("sources"):
+                with st.expander(t["history_sources_label"].format(n=len(msg["sources"]))):
+                    render_catalog_cards(msg["sources"])
+
+    if question:
+        with st.chat_message("user", avatar="🧑"):
+            st.markdown(question)
+
+        with st.chat_message("assistant", avatar="🤖"):
+            try:
+                stream = rag_chain.generate(question, new_sources, lang=st.session_state["lang"])
+                full_answer = st.write_stream(stream)
+            except Exception as exc:  # noqa: BLE001
+                full_answer = t["llm_error"].format(error=exc)
+                new_sources = []
+                st.error(full_answer)
+
+            if new_sources:
+                st.markdown(
+                    f'<div class="history-cite">{t["history_sources_label"].format(n=len(new_sources))}</div>',
+                    unsafe_allow_html=True,
+                )
+
+        st.session_state["messages"].append({"role": "user", "content": question, "sources": None})
+        st.session_state["messages"].append(
+            {"role": "assistant", "content": full_answer, "sources": new_sources}
+        )
+
+with rail_col:
+    st.markdown('<div class="rail-sticky">', unsafe_allow_html=True)
+    if new_sources:
+        st.markdown(f"##### {t['rail_sources_header']}")
+        render_catalog_cards(new_sources)
+    elif st.session_state["messages"]:
+        last_assistant = next(
+            (m for m in reversed(st.session_state["messages"]) if m["role"] == "assistant" and m.get("sources")),
+            None,
+        )
+        if last_assistant:
+            st.markdown(f"##### {t['rail_sources_header']}")
+            render_catalog_cards(last_assistant["sources"])
+    else:
+        ready = kb_doc_count > 0
+        title = t["rail_idle_ready_title"] if ready else t["rail_idle_empty_title"]
+        hint = t["rail_idle_ready_hint"] if ready else t["rail_idle_empty_hint"]
+        doc_rows = "".join(
+            f'<div class="index-doc-chip"><b>📄 {escape(s["source"])}</b>'
+            f'<span>{t["kb_doc_chip_meta"].format(n=s["chunk_count"])}</span></div>'
+            for s in kb_sources
+        )
+        st.markdown(
+            f"""<div class="index-idle">
+                <div class="drawer-eyebrow" style="color: var(--brass);">{t['rail_idle_eyebrow']}</div>
+                <div class="index-idle-title">{title}</div>
+                <div class="index-idle-hint">{hint}</div>
+                <div class="index-stat-row">
+                    <div class="index-stat">
+                        <div class="index-stat-value">{kb_doc_count}</div>
+                        <div class="index-stat-label">{t['kb_section_header']}</div>
+                    </div>
+                    <div class="index-stat">
+                        <div class="index-stat-value">{kb_chunk_count}</div>
+                        <div class="index-stat-label">{t['chunk_stat_label']}</div>
+                    </div>
+                </div>
+                {doc_rows}
+            </div>""",
+            unsafe_allow_html=True,
+        )
+    st.markdown("</div>", unsafe_allow_html=True)
