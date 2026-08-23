@@ -45,9 +45,9 @@ Use a new `COLLECTION_NAME` when changing the embedding model. Existing vectors 
 
 1. Create a DNS A record for `rag.taoxiong.site` pointing at the VM.
 2. Configure the GitHub environment values above.
-3. (No longer needed — this repo's own `deploy.yml` pushes `deploy/edge.Caddyfile` to the shared `/opt/edge-proxy` stack on every deploy. See `edge-proxy-extraction-design.md` in `Roster_Creator` for how the shared proxy works.)
+3. (No longer needed — this repo's own `deploy.yml` pushes `deploy/rag.caddy` to the shared `/opt/edge-proxy` stack on every deploy. See `edge-proxy-extraction-design.md` in `Roster_Creator` for how the shared proxy works.)
 4. Push the RAG deployment workflow to `master`. It builds an ARM64 image, writes `/home/deploy/ai-llm-rag/.env`, starts the isolated database and app, then validates the Compose stack.
-5. The Caddy step validates its configuration before hot-reloading, after the app health check passes.
+5. The fragment lands at `deploy/rag.caddy`, gets pushed to `/opt/edge-proxy/sites-enabled/rag.caddy`, and is validated with `caddy validate` before being committed. If validation fails, the fragment is reverted and the CI job fails; the previously-working config keeps serving traffic throughout. On success, the commit lands and Caddy hot-reloads.
 
 ## Checks
 

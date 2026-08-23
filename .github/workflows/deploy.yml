@@ -99,7 +99,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "deploy/edge.Caddyfile"
+          source: "deploy/rag.caddy"
           target: "/opt/edge-proxy/sites-enabled"
           strip_components: 1
 
@@ -111,8 +111,12 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -euo pipefail
-            mv /opt/edge-proxy/sites-enabled/edge.Caddyfile /opt/edge-proxy/sites-enabled/rag.caddy
             cd /opt/edge-proxy
-            git add -A
+            if ! docker exec edge-proxy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile; then
+              git checkout -- sites-enabled/rag.caddy 2>/dev/null || rm -f sites-enabled/rag.caddy
+              echo "rag fragment failed validation; reverted, edge proxy untouched" >&2
+              exit 1
+            fi
+            git add sites-enabled/rag.caddy
             git diff --cached --quiet || git commit -m "rag: update edge fragment"
             docker exec edge-proxy caddy reload --config /etc/caddy/Caddyfile
