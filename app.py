@@ -120,12 +120,12 @@ st.markdown(
     [data-testid="stChatInput"], [data-testid="stBottomBlockContainer"] { background-color: transparent; }
     [data-testid="stBottomBlockContainer"] { max-width: 1500px; margin: 0 auto; }
     [data-testid="stChatInput"] textarea { background-color: var(--card) !important; }
-    .history-cite { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--ink-faint); margin-top: 0.35rem; }
+    .history-cite { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--ink-faint); margin: 0.35rem 0 0.2rem 0; }
+    [data-testid="stChatMessageContent"] { padding-bottom: 0.4rem; }
 
     /* ---- 目录索引卡（右侧引用栏的招牌元素）---- */
     .catalog-card {
         position: relative; background-color: var(--card);
-        background-image: repeating-linear-gradient(var(--card) 0 26px, var(--rule-faint) 26px 27px);
         border: 1px solid rgba(42,33,22,0.14); border-left: 3px solid var(--brass);
         border-radius: 10px; padding: 0.85rem 1rem 0.85rem 2rem; margin-bottom: 0.9rem;
     }
@@ -142,7 +142,6 @@ st.markdown(
     .catalog-card-meta { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--ink-faint); margin-bottom: 0.55rem; }
     .catalog-card-excerpt {
         font-size: 0.82rem; line-height: 1.55; color: var(--ink-muted); white-space: pre-wrap;
-        max-height: 7.2em; overflow-y: auto; padding-right: 0.2rem;
     }
 
     /* ---- 目录索引统计（右侧栏闲置状态）---- */
@@ -163,7 +162,14 @@ st.markdown(
     .index-doc-chip b { color: var(--ink); font-weight: 500; }
     .index-doc-chip span:last-child { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; white-space: nowrap; }
 
-    .rail-sticky { position: sticky; top: 1rem; }
+    /* Streamlit 的列内部包装 div 默认按内容自适应高度，flex 拉伸只作用到最外层的
+       stColumn，不会往下传递，导致粘性元素自己的直接父级和它一样高、完全没有
+       "浮动空间"。这里把这一路包装 div 都撑到 100% 高度，粘性定位才有效果。 */
+    [data-testid="stColumn"]:has(.st-key-citation_rail) [data-testid="stVerticalBlock"]:not(.st-key-citation_rail),
+    [data-testid="stColumn"]:has(.st-key-citation_rail) [data-testid="stLayoutWrapper"] {
+        height: 100%;
+    }
+    .st-key-citation_rail { position: sticky; top: 1rem; flex-grow: 0; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -422,8 +428,7 @@ with chat_col:
             {"role": "assistant", "content": full_answer, "sources": new_sources}
         )
 
-with rail_col:
-    st.markdown('<div class="rail-sticky">', unsafe_allow_html=True)
+with rail_col, st.container(key="citation_rail"):
     if new_sources:
         st.markdown(f"##### {t['rail_sources_header']}")
         render_catalog_cards(new_sources)
@@ -463,4 +468,3 @@ with rail_col:
             </div>""",
             unsafe_allow_html=True,
         )
-    st.markdown("</div>", unsafe_allow_html=True)
