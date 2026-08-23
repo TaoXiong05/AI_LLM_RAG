@@ -46,14 +46,13 @@ Use a new `COLLECTION_NAME` when changing the embedding model. Existing vectors 
 1. Create a DNS A record for `rag.taoxiong.site` pointing at the VM.
 2. Configure the GitHub environment values above.
 3. Merge or push the Caddy change in `Roster_Creator` so its managed Caddyfile includes `deploy/Caddyfile`'s site block.
-4. Push the RAG deployment workflow to `master`. It builds an ARM64 image, writes `/opt/ai-llm-rag/.env`, starts the isolated database and app, then validates the Compose stack.
+4. Push the RAG deployment workflow to `master`. It builds an ARM64 image, writes `/home/deploy/ai-llm-rag/.env`, starts the isolated database and app, then validates the Compose stack.
 5. The Caddy step validates its configuration before hot-reloading, after the app health check passes.
 
 ## Checks
 
 ```bash
 curl -fsS https://rag.taoxiong.site/_stcore/health
-docker compose -f /opt/ai-llm-rag/docker-compose.yml ps
+docker compose -f /home/deploy/ai-llm-rag/docker-compose.yml ps
 docker exec ai-llm-rag-ollama ollama list
 ```
-

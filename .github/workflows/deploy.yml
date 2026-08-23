@@ -52,7 +52,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: mkdir -p /opt/ai-llm-rag
+          script: mkdir -p /home/deploy/ai-llm-rag
 
       - name: Copy Compose file to VM
         uses: appleboy/scp-action@v0.1.7
@@ -61,7 +61,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: deploy/docker-compose.yml
-          target: /opt/ai-llm-rag
+          target: /home/deploy/ai-llm-rag
           strip_components: 1
 
       - name: Write environment and deploy
@@ -73,8 +73,8 @@ jobs:
           script: |
             set -euo pipefail
             umask 077
-            mkdir -p /opt/ai-llm-rag
-            cat > /opt/ai-llm-rag/.env <<'EOF'
+            mkdir -p /home/deploy/ai-llm-rag
+            cat > /home/deploy/ai-llm-rag/.env <<'EOF'
             PG_DATABASE=${{ vars.PG_DATABASE }}
             PG_USER=${{ vars.PG_USER }}
             PG_PASSWORD=${{ secrets.PG_PASSWORD }}
@@ -87,7 +87,7 @@ jobs:
             TOP_K=${{ vars.TOP_K }}
             CLEAR_KB_PASSWORD=${{ secrets.CLEAR_KB_PASSWORD }}
             EOF
-            cd /opt/ai-llm-rag
+            cd /home/deploy/ai-llm-rag
             docker compose pull
             docker compose up -d --remove-orphans
             docker compose ps
