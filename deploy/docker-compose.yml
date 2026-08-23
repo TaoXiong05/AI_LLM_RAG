@@ -32,7 +32,6 @@ services:
     networks:
       - edge
       - rag_internal
-      - ollama_internal
 
 volumes:
   pgdata:
@@ -42,6 +41,3 @@ networks:
     external: true
   rag_internal:
     name: ai-llm-rag-db-internal
-  ollama_internal:
-    external: true
-    name: ai-llm-rag-internal

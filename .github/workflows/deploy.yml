@@ -78,11 +78,11 @@ jobs:
             PG_DATABASE=${{ vars.PG_DATABASE }}
             PG_USER=${{ vars.PG_USER }}
             PG_PASSWORD=${{ secrets.PG_PASSWORD }}
-            OPENAI_BASE_URL=http://ollama:11434/v1/
-            OPENAI_API_KEY=ollama
-            CHAT_MODEL=gemma3:4b
-            OCR_MODEL=gemma3:4b
-            EMBED_MODEL=qwen3-embedding:0.6b
+            OPENAI_BASE_URL=${{ vars.OPENAI_BASE_URL }}
+            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+            CHAT_MODEL=${{ vars.CHAT_MODEL }}
+            OCR_MODEL=${{ vars.OCR_MODEL }}
+            EMBED_MODEL=${{ vars.EMBED_MODEL }}
             COLLECTION_NAME=${{ vars.COLLECTION_NAME }}
             TOP_K=${{ vars.TOP_K }}
             CLEAR_KB_PASSWORD=${{ secrets.CLEAR_KB_PASSWORD }}
