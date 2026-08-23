@@ -60,9 +60,24 @@ def add_documents(chunks: list[Document]) -> int:
     return len(chunks)
 
 
+def _below_max_distance(
+    results: list[tuple[Document, float]], max_distance: float
+) -> list[tuple[Document, float]]:
+    """按余弦距离阈值过滤检索结果：只保留距离小于 max_distance 的片段。
+
+    pgvector 的 similarity_search_with_score 返回的 score 是余弦距离
+    （1 - cosine_similarity），越小越相关；距离达到 max_distance 的片段
+    视为低质量结果，不再作为引用展示。
+    """
+    return [(doc, score) for doc, score in results if score < max_distance]
+
+
 def similarity_search(query: str, k: int | None = None) -> list[tuple[Document, float]]:
     k = k or settings.top_k
-    return get_vector_store().similarity_search_with_score(query, k=k)
+    results = get_vector_store().similarity_search_with_score(query, k=k)
+    # 过滤掉余弦距离过大的片段：解决"模型判定未找到相关资料、UI 却仍展示引用卡"
+    # 的矛盾（低相关度检索结果不应被当作引用）。
+    return _below_max_distance(results, settings.retrieval_max_distance)
 
 
 def list_sources() -> list[dict]:

@@ -165,7 +165,11 @@ st.markdown(
     /* Streamlit 的列内部包装 div 默认按内容自适应高度，flex 拉伸只作用到最外层的
        stColumn，不会往下传递，导致粘性元素自己的直接父级和它一样高、完全没有
        "浮动空间"。这里把这一路包装 div 都撑到 100% 高度，粘性定位才有效果。 */
-    [data-testid="stColumn"]:has(.st-key-citation_rail) [data-testid="stVerticalBlock"]:not(.st-key-citation_rail),
+    [data-testid="stColumn"]:has(.st-key-citation_rail) [data-testid="stVerticalBlock"]:not(.st-key-citation_rail) {
+        height: 100%;
+        /* 问答区与右侧"CITED FROM THE CATALOG"引用栏之间加一条细分隔线，贯穿整列高度 */
+        border-left: 1px solid rgba(42, 33, 22, 0.16);
+    }
     [data-testid="stColumn"]:has(.st-key-citation_rail) [data-testid="stLayoutWrapper"] {
         height: 100%;
     }
@@ -363,6 +367,7 @@ pending_question = st.session_state.pop("pending_question", None)
 question = pending_question or typed_question
 
 new_sources: list[tuple] | None = None
+cited_sources: list[tuple] | None = None
 if question:
     with st.spinner(t["searching_status"]):
         new_sources = rag_chain.retrieve(question, k=settings.top_k)
@@ -384,6 +389,35 @@ def render_catalog_cards(sources: list[tuple]) -> None:
         )
 
 
+def render_rail_idle() -> None:
+    """右侧引用栏的空闲状态：知识库统计与已归档文档清单。"""
+    ready = kb_doc_count > 0
+    title = t["rail_idle_ready_title"] if ready else t["rail_idle_empty_title"]
+    hint = t["rail_idle_ready_hint"] if ready else t["rail_idle_empty_hint"]
+    doc_rows = "".join(
+        f'<div class="index-doc-chip"><b>📄 {escape(s["source"])}</b>'
+        f'<span>{t["kb_doc_chip_meta"].format(n=s["chunk_count"])}</span></div>'
+        for s in kb_sources
+    )
+    st.markdown(
+        f"""<div class="index-idle">
+            <div class="drawer-eyebrow" style="color: var(--brass);">{t['rail_idle_eyebrow']}</div>
+            <div class="index-idle-title">{title}</div>
+            <div class="index-idle-hint">{hint}</div>
+            <div class="index-stat-row">
+                <div class="index-stat">
+                    <div class="index-stat-value">{kb_doc_count}</div>
+                    <div class="index-stat-label">{t['kb_section_header']}</div>
+                </div>
+                <div class="index-stat">
+                    <div class="index-stat-value">{kb_chunk_count}</div>
+                    <div class="index-stat-label">{t['chunk_stat_label']}</div>
+                </div>
+            </div>
+            {doc_rows}
+        </div>""",
+        unsafe_allow_html=True,
+    )
 chat_col, rail_col = st.columns([0.62, 0.38], gap="large")
 
 with chat_col:
@@ -417,21 +451,32 @@ with chat_col:
                 new_sources = []
                 st.error(full_answer)
 
+            # 只展示回答中真正引用（标注了 [i] 编号）的片段：
+            # 检索结果只是候选，模型判定"未找到相关资料"且未引用任何编号时，
+            # cited_sources 为空，不再出现"没找到却显示引用"的矛盾。
             if new_sources:
+                cited_sources = rag_chain.select_cited_chunks(full_answer, new_sources)
+
+            if cited_sources:
                 st.markdown(
-                    f'<div class="history-cite">{t["history_sources_label"].format(n=len(new_sources))}</div>',
+                    f'<div class="history-cite">{t["history_sources_label"].format(n=len(cited_sources))}</div>',
                     unsafe_allow_html=True,
                 )
 
         st.session_state["messages"].append({"role": "user", "content": question, "sources": None})
         st.session_state["messages"].append(
-            {"role": "assistant", "content": full_answer, "sources": new_sources}
+            {"role": "assistant", "content": full_answer, "sources": cited_sources}
         )
 
 with rail_col, st.container(key="citation_rail"):
-    if new_sources:
-        st.markdown(f"##### {t['rail_sources_header']}")
-        render_catalog_cards(new_sources)
+    if question:
+        # 本轮有问答：只展示回答真正引用（标注了 [i] 编号）的片段，
+        # 未引用任何片段时回到空闲状态，避免"没找到却显示引用"。
+        if cited_sources:
+            st.markdown(f"##### {t['rail_sources_header']}")
+            render_catalog_cards(cited_sources)
+        else:
+            render_rail_idle()
     elif st.session_state["messages"]:
         last_assistant = next(
             (m for m in reversed(st.session_state["messages"]) if m["role"] == "assistant" and m.get("sources")),
@@ -440,31 +485,7 @@ with rail_col, st.container(key="citation_rail"):
         if last_assistant:
             st.markdown(f"##### {t['rail_sources_header']}")
             render_catalog_cards(last_assistant["sources"])
+        else:
+            render_rail_idle()
     else:
-        ready = kb_doc_count > 0
-        title = t["rail_idle_ready_title"] if ready else t["rail_idle_empty_title"]
-        hint = t["rail_idle_ready_hint"] if ready else t["rail_idle_empty_hint"]
-        doc_rows = "".join(
-            f'<div class="index-doc-chip"><b>📄 {escape(s["source"])}</b>'
-            f'<span>{t["kb_doc_chip_meta"].format(n=s["chunk_count"])}</span></div>'
-            for s in kb_sources
-        )
-        st.markdown(
-            f"""<div class="index-idle">
-                <div class="drawer-eyebrow" style="color: var(--brass);">{t['rail_idle_eyebrow']}</div>
-                <div class="index-idle-title">{title}</div>
-                <div class="index-idle-hint">{hint}</div>
-                <div class="index-stat-row">
-                    <div class="index-stat">
-                        <div class="index-stat-value">{kb_doc_count}</div>
-                        <div class="index-stat-label">{t['kb_section_header']}</div>
-                    </div>
-                    <div class="index-stat">
-                        <div class="index-stat-value">{kb_chunk_count}</div>
-                        <div class="index-stat-label">{t['chunk_stat_label']}</div>
-                    </div>
-                </div>
-                {doc_rows}
-            </div>""",
-            unsafe_allow_html=True,
-        )
+        render_rail_idle()

@@ -42,6 +42,7 @@ class Settings:
 
     collection_name: str
     top_k: int
+    retrieval_max_distance: float
     clear_kb_password: str
 
     @property
@@ -70,6 +71,9 @@ def get_settings() -> Settings:
         ocr_model=os.getenv("OCR_MODEL", DEFAULT_OCR_MODEL),
         collection_name=os.getenv("COLLECTION_NAME", "rag_default_kb"),
         top_k=int(os.getenv("TOP_K", "3")),
+        # 检索结果的相关度阈值。pgvector 按余弦距离返回 score（越小越相关，0=完全一致，
+        # 1=正交、无相关性）。距离达到该阈值的片段视为低质量检索结果，不再作为引用展示。
+        retrieval_max_distance=float(os.getenv("RETRIEVAL_MAX_DISTANCE", "0.8")),
         clear_kb_password=os.getenv("CLEAR_KB_PASSWORD", ""),
     )
 
