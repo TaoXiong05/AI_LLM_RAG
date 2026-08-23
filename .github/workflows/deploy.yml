@@ -46,6 +46,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Prepare VM deployment directory
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: mkdir -p /opt/ai-llm-rag
+
       - name: Copy Compose file to VM
         uses: appleboy/scp-action@v0.1.7
         with:
