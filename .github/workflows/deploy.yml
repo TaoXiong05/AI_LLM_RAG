@@ -92,3 +92,27 @@ jobs:
             docker compose up -d --remove-orphans
             docker compose ps
             docker image prune -f
+
+      - name: Push edge routing fragment
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "deploy/edge.Caddyfile"
+          target: "/opt/edge-proxy/sites-enabled"
+          strip_components: 1
+
+      - name: Commit fragment and reload edge proxy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -euo pipefail
+            mv /opt/edge-proxy/sites-enabled/edge.Caddyfile /opt/edge-proxy/sites-enabled/rag.caddy
+            cd /opt/edge-proxy
+            git add -A
+            git diff --cached --quiet || git commit -m "rag: update edge fragment"
+            docker exec edge-proxy caddy reload --config /etc/caddy/Caddyfile
