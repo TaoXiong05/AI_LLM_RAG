@@ -1,0 +1,3 @@
+rag.taoxiong.site {
+    reverse_proxy ai-llm-rag-app:8501
+}

@@ -1,0 +1,47 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: ai-llm-rag-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+      POSTGRES_DB: ${PG_DATABASE}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    networks:
+      - rag_internal
+
+  app:
+    image: ghcr.io/taoxiong05/ai-llm-rag:latest
+    container_name: ai-llm-rag-app
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PG_HOST: db
+      PG_PORT: "5432"
+      PG_SSLMODE: disable
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - edge
+      - rag_internal
+      - ollama_internal
+
+volumes:
+  pgdata:
+
+networks:
+  edge:
+    external: true
+  rag_internal:
+    name: ai-llm-rag-db-internal
+  ollama_internal:
+    external: true
+    name: ai-llm-rag-internal

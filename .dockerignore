@@ -1,0 +1,17 @@
+.git
+.github
+.claude
+.devcontainer
+.gstack
+.idea
+__pycache__
+*.py[cod]
+.env
+.env.*
+!.env.example
+.streamlit
+.venv
+venv
+*.egg-info
+plan.md
+03RAG_Demo.py
