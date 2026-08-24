@@ -6,6 +6,7 @@ import streamlit as st
 
 from backend import chunker, db, rag_chain
 from backend.parser import UnsupportedFileTypeError, parse_file
+from backend.rate_limiter import RateLimiter
 from config import settings
 from i18n import DEFAULT_LANG, get_strings
 
@@ -192,6 +193,31 @@ def init_backend() -> tuple[bool, str]:
     return db.test_connection()
 
 
+@st.cache_resource
+def get_rate_limiter() -> RateLimiter:
+    return RateLimiter(
+        max_requests=settings.rate_limit_max_requests,
+        window_seconds=settings.rate_limit_window_seconds,
+        ban_seconds=settings.rate_limit_ban_seconds,
+    )
+
+
+def get_client_ip() -> str:
+    """从反向代理转发的请求头里取真实客户端 IP，取不到时回退到本地连接 IP。"""
+    xff = st.context.headers.get("X-Forwarded-For")
+    if xff:
+        return xff.split(",")[0].strip()
+    return st.context.ip_address or "unknown"
+
+
+def rate_limit_ok() -> bool:
+    """超限时展示统一提示并返回 False，调用方应据此跳过后续的高成本处理。"""
+    if get_rate_limiter().check(get_client_ip()):
+        return True
+    st.error(t["rate_limit_blocked"])
+    return False
+
+
 ok, err_msg = init_backend()
 if not ok:
     st.error(t["db_error"].format(msg=err_msg))
@@ -227,7 +253,9 @@ with st.sidebar:
             label_visibility="collapsed",
         )
 
-        if st.button(t["process_button"], disabled=not uploaded_files, use_container_width=True, type="primary"):
+        if st.button(
+            t["process_button"], disabled=not uploaded_files, use_container_width=True, type="primary"
+        ) and rate_limit_ok():
             total = len(uploaded_files)
             progress = st.progress(0)
             ok_count = 0
@@ -369,8 +397,11 @@ question = pending_question or typed_question
 new_sources: list[tuple] | None = None
 cited_sources: list[tuple] | None = None
 if question:
-    with st.spinner(t["searching_status"]):
-        new_sources = rag_chain.retrieve(question, k=settings.top_k)
+    if rate_limit_ok():
+        with st.spinner(t["searching_status"]):
+            new_sources = rag_chain.retrieve(question, k=settings.top_k)
+    else:
+        question = None
 
 
 def render_catalog_cards(sources: list[tuple]) -> None:

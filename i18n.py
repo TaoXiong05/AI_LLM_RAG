@@ -68,6 +68,8 @@ STRINGS = {
         "empty_kb_answer": "The knowledge base is empty or no relevant content was found. "
         "Please upload and process documents in the sidebar first.",
         "llm_error": "Model call failed: {error}",
+        "rate_limit_blocked": "This is a demo application and access is rate-limited. "
+        "Thank you for your understanding.",
     },
     "zh": {
         "lang_switch_button": "English",
@@ -130,6 +132,7 @@ STRINGS = {
         "unknown_source": "未知来源",
         "empty_kb_answer": "知识库为空或未检索到相关内容，请先在侧边栏上传并处理文档。",
         "llm_error": "模型调用失败：{error}",
+        "rate_limit_blocked": "这是demo应用，我们对访问有限制，谢谢您的理解。",
     },
 }
 

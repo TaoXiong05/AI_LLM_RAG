@@ -45,6 +45,10 @@ class Settings:
     retrieval_max_distance: float
     clear_kb_password: str
 
+    rate_limit_max_requests: int
+    rate_limit_window_seconds: float
+    rate_limit_ban_seconds: float
+
     @property
     def pg_connection_string(self) -> str:
         user = quote_plus(self.pg_user)
@@ -75,6 +79,10 @@ def get_settings() -> Settings:
         # 1=正交、无相关性）。距离达到该阈值的片段视为低质量检索结果，不再作为引用展示。
         retrieval_max_distance=float(os.getenv("RETRIEVAL_MAX_DISTANCE", "0.8")),
         clear_kb_password=os.getenv("CLEAR_KB_PASSWORD", ""),
+        # 每个 IP 在窗口期内允许发起的提问/上传处理次数，超出后封禁该 IP
+        rate_limit_max_requests=int(os.getenv("RATE_LIMIT_MAX_REQUESTS", "20")),
+        rate_limit_window_seconds=float(os.getenv("RATE_LIMIT_WINDOW_SECONDS", str(60 * 60))),
+        rate_limit_ban_seconds=float(os.getenv("RATE_LIMIT_BAN_SECONDS", str(24 * 60 * 60))),
     )
 
 
