@@ -58,7 +58,11 @@ STRINGS = {
         "app_title": "📚 Document Q&A RAG Demo",
         "app_description": "Upload PDF / DOCX / TXT / IMAGE files in the sidebar, then ask questions "
         "below — answers are generated from your documents' content, with cited sources. "
-        "Built with Streamlit + PostgreSQL (pgvector) + LangChain.",
+        "It also runs as a fully automated email support desk: send your questions to "
+        "support@taoxiong.site and an AI agent reads the email, answers each question from the "
+        "knowledge base (and says so honestly when it can't find an answer), then replies on its own "
+        "within a couple of minutes — around the clock, no human in the loop. "
+        "Built with Streamlit + PostgreSQL (pgvector) + LangChain + Resend.",
         "privacy_notice": "This is a public demo site. Please do not upload documents "
         "containing private, confidential, or otherwise sensitive information.",
         "chat_input_placeholder": "Ask a question",
@@ -123,8 +127,10 @@ STRINGS = {
         "api_key_error": "OPENAI_API_KEY 未配置或包含非法字符（必须是纯 ASCII）。请检查 .env / Secrets"
         "里的取值，确认占位文字已经替换成你真实的 API Key。",
         "app_title": "📚 文档问答 RAG Demo",
-        "app_description": "在侧边栏上传 PDF / DOCX / TXT 文件，然后在下方提问——回答会基于你上传文档的内容生成，并标注引用来源。"
-        "技术栈：Streamlit + PostgreSQL（pgvector）+ LangChain。",
+        "app_description": "在侧边栏上传 PDF / DOCX / TXT / 图片文件，然后在下方提问——回答会基于你上传文档的内容生成，并标注引用来源。"
+        "它同时也是一个全自动的邮件客服：把问题发到 support@taoxiong.site，AI 客服会自动读信、拆分问题、"
+        "逐条依据知识库作答（查不到的会如实说明），并在几分钟内自动回信——7×24 小时在线，全程无需人工。"
+        "技术栈：Streamlit + PostgreSQL（pgvector）+ LangChain + Resend。",
         "privacy_notice": "这是一个公开的 Demo 站点，请勿上传任何涉及隐私、机密或敏感信息的文档。",
         "chat_input_placeholder": "请输入问题",
         "searching_status": "问题已提交，正在检索知识库…",
