@@ -34,6 +34,7 @@ class WorkerConfig:
     mail_address: str
     per_sender_daily_limit: int
     daily_global_limit: int
+    daily_hard_cap: int
     max_questions: int
     max_body_chars: int
     max_retries: int
@@ -83,20 +84,31 @@ def decide(email: dict, deps: Deps, now: float) -> tuple[str, Reply | None]:
     if mail_rules.is_spoofed(email):
         return "spoofed", None
 
-    day = mail_log.utc_day_start(now)
-    if mail_log.count_replies(deps.engine, since=day) >= cfg.daily_global_limit:
-        return "global_limit", None
-
     subject = email.get("subject") or ""
     body = mail_rules.extract_body(email)
     lang = mail_rules.detect_lang(f"{subject}\n{body}")
-
     sender = mail_rules.sender_address(email)
+
+    day = mail_log.utc_day_start(now)
+    sent_today = mail_log.count_replies(deps.engine, since=day)
+    # 达到硬上限后连额度提示也不再发，保证不超出发信服务商的每日配额
+    at_hard_cap = sent_today >= cfg.daily_hard_cap
+
+    def notified(category: str) -> bool:
+        return mail_log.count_replies(deps.engine, since=day, sender=sender, category=category) > 0
+
+    # 全局每日额度用完：每个发件人当天提示一次，之后静默
+    if sent_today >= cfg.daily_global_limit:
+        if at_hard_cap or notified("global_limit_notice"):
+            return "global_limit", None
+        return "global_limit_notice", template_reply("global_limit", lang)
+
+    # 发件人每日额度用完：同样只提示一次，避免有人靠超额邮件反复刷出回信
     used = mail_log.count_replies(
         deps.engine, since=day, sender=sender, exclude_category="sender_limit_notice"
     )
     if used >= cfg.per_sender_daily_limit:
-        if mail_log.count_replies(deps.engine, since=day, sender=sender, category="sender_limit_notice"):
+        if at_hard_cap or notified("sender_limit_notice"):
             return "sender_limit_silent", None
         return "sender_limit_notice", template_reply("sender_limit", lang, n=cfg.per_sender_daily_limit)
 
@@ -270,6 +282,7 @@ def build_deps() -> Deps:
             mail_address=settings.mail_address,
             per_sender_daily_limit=settings.mail_per_sender_daily_limit,
             daily_global_limit=settings.mail_daily_global_limit,
+            daily_hard_cap=settings.mail_daily_hard_cap,
             max_questions=settings.mail_max_questions,
             max_body_chars=settings.mail_max_body_chars,
             max_retries=settings.mail_max_retries,

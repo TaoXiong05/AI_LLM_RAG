@@ -24,6 +24,8 @@ TEMPLATES = {
         "attachment_only": "您好，\n\n暂不支持处理邮件附件，请把您的问题直接写在邮件正文中重新发送。",
         "injection": "您好，\n\n抱歉，您的请求无法处理。本邮箱仅回答与知识库内容相关的问题。",
         "sender_limit": "您好，\n\n您今天的自动回复次数已达上限（{n} 封），请明天再来信。",
+        "global_limit": "您好，\n\n今天的自动回复名额已经用完，您的邮件暂时没有处理。"
+        "请在 UTC 0 点（北京时间早上 8 点）之后重新发送，谢谢理解。",
         "all_not_found": "您好，\n\n很抱歉，知识库中没有检索到与您的问题相关的内容。",
         "busy": "您好，\n\n系统暂时繁忙，未能处理您的邮件，请稍后重新发送。",
         "no_question": "您好，\n\n感谢来信！本邮箱由 AI 客服自动处理，只回答与知识库内容相关的问题，"
@@ -50,6 +52,8 @@ TEMPLATES = {
         "attachment_only": "Hello,\n\nAttachments are not supported. Please write your question in the email body and send it again.",
         "injection": "Hello,\n\nSorry, your request cannot be processed. This mailbox only answers questions about the knowledge base.",
         "sender_limit": "Hello,\n\nYou have reached today's limit of {n} automatic replies. Please write again tomorrow.",
+        "global_limit": "Hello,\n\nToday's automatic replies have all been used up, so your email hasn't been processed. "
+        "Please send it again tomorrow (after 00:00 UTC). Thank you for your understanding.",
         "all_not_found": "Hello,\n\nSorry, no information related to your question was found in the knowledge base.",
         "busy": "Hello,\n\nThe system is temporarily busy and could not process your email. Please try again later.",
         "no_question": "Hello,\n\nThanks for your email! This mailbox is handled automatically by an AI assistant "

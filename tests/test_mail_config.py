@@ -35,6 +35,7 @@ def test_mail_defaults():
     s = get_settings()
     assert s.mail_per_sender_daily_limit == 5
     assert s.mail_daily_global_limit == 50
+    assert s.mail_daily_hard_cap == 90
     assert s.mail_max_questions == 5
     assert s.mail_max_body_chars == 5000
     assert s.mail_max_retries == 3

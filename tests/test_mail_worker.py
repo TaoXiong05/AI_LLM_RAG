@@ -97,6 +97,7 @@ def make_deps(emails, llm, kb=None, **overrides) -> Deps:
         mail_address=OWN,
         per_sender_daily_limit=5,
         daily_global_limit=50,
+        daily_hard_cap=90,
         max_questions=5,
         max_body_chars=5000,
         max_retries=3,
@@ -269,13 +270,31 @@ def test_sender_daily_limit_sends_one_notice_then_silence():
     assert _category(deps, "e6") == "sender_limit_silent"
 
 
-def test_global_daily_limit_is_silent():
+def test_global_daily_limit_notifies_each_sender_once():
     llm = _question_llm("怎么退款？", answers={"怎么退款？": "答 [1]"})
-    emails = [make_email("e0"), make_email("e1", **{"from": "Bob <bob@example.com>"})]
+    bob = {"from": "Bob <bob@example.com>"}
+    emails = [make_email("e0"), make_email("e1", **bob), make_email("e2", **bob)]
     deps = make_deps(emails, llm, kb={"怎么退款？": CHUNK}, daily_global_limit=1)
     poll_once(deps)
-    assert len(deps.client.sent) == 1
-    assert _category(deps, "e1") == "global_limit"
+    assert len(deps.client.sent) == 2
+    assert deps.client.sent[1]["to"] == "bob@example.com"
+    assert deps.client.sent[1]["text"] == render_template("global_limit", "zh")
+    assert _category(deps, "e1") == "global_limit_notice"
+    assert _category(deps, "e2") == "global_limit"  # 同一发件人当天只提示一次
+
+
+def test_hard_cap_stops_all_notices():
+    llm = _question_llm("怎么退款？", answers={"怎么退款？": "答 [1]"})
+    emails = [
+        make_email("e0"),
+        make_email("e1", **{"from": "Bob <bob@example.com>"}),
+        make_email("e2", **{"from": "Carol <carol@example.com>"}),
+    ]
+    deps = make_deps(emails, llm, kb={"怎么退款？": CHUNK}, daily_global_limit=1, daily_hard_cap=2)
+    poll_once(deps)
+    # e0 正常作答，e1 收到额度提示（共 2 封 = 硬上限），e2 连提示也不再发
+    assert [s["to"] for s in deps.client.sent] == ["alice@example.com", "bob@example.com"]
+    assert _category(deps, "e2") == "global_limit"
 
 
 def test_llm_failure_retries_then_sends_busy():

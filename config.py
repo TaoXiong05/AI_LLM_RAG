@@ -55,6 +55,7 @@ class Settings:
     mail_poll_seconds: float
     mail_per_sender_daily_limit: int
     mail_daily_global_limit: int
+    mail_daily_hard_cap: int
     mail_max_questions: int
     mail_max_body_chars: int
     mail_max_retries: int
@@ -108,6 +109,8 @@ def get_settings() -> Settings:
         mail_poll_seconds=float(os.getenv("MAIL_POLL_SECONDS", "60")),
         mail_per_sender_daily_limit=int(os.getenv("MAIL_PER_SENDER_DAILY_LIMIT", "5")),
         mail_daily_global_limit=int(os.getenv("MAIL_DAILY_GLOBAL_LIMIT", "50")),
+        # 含额度提示在内的每日发信硬上限，低于 Resend 免费版每日配额（100 封）
+        mail_daily_hard_cap=int(os.getenv("MAIL_DAILY_HARD_CAP", "90")),
         mail_max_questions=int(os.getenv("MAIL_MAX_QUESTIONS", "5")),
         mail_max_body_chars=int(os.getenv("MAIL_MAX_BODY_CHARS", "5000")),
         mail_max_retries=int(os.getenv("MAIL_MAX_RETRIES", "3")),
