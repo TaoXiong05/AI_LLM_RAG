@@ -16,9 +16,10 @@ from backend import mail_analyzer, mail_log, mail_rules
 from backend.mail_analyzer import LLMFn
 from backend.mail_templates import (
     AnswerItem,
-    compose_answers,
-    render_template,
+    Reply,
+    answers_reply,
     reply_subject,
+    template_reply,
     thread_headers,
 )
 
@@ -69,7 +70,7 @@ def _answer(question: str, lang: str, deps: Deps) -> AnswerItem:
     return AnswerItem(question, result.answer, sources)
 
 
-def decide(email: dict, deps: Deps, now: float) -> tuple[str, str | None]:
+def decide(email: dict, deps: Deps, now: float) -> tuple[str, Reply | None]:
     """决定如何回复一封邮件：返回 (category, 回复正文)，正文为 None 表示静默。
 
     LLM 调用失败会直接抛异常，由 handle_email 负责重试。
@@ -97,34 +98,35 @@ def decide(email: dict, deps: Deps, now: float) -> tuple[str, str | None]:
     if used >= cfg.per_sender_daily_limit:
         if mail_log.count_replies(deps.engine, since=day, sender=sender, category="sender_limit_notice"):
             return "sender_limit_silent", None
-        return "sender_limit_notice", render_template("sender_limit", lang, n=cfg.per_sender_daily_limit)
+        return "sender_limit_notice", template_reply("sender_limit", lang, n=cfg.per_sender_daily_limit)
 
     attached = mail_rules.has_attachments(email)
     problem = mail_rules.precheck(body, attached, cfg.max_body_chars)
     if problem:
-        return problem, render_template(problem, lang, n=cfg.max_body_chars)
+        return problem, template_reply(problem, lang, n=cfg.max_body_chars)
 
     analysis = mail_analyzer.analyze_email(subject, body, lang, deps.llm)
     lang = analysis.language
     if analysis.category in ("spam", "abuse", "other"):
         return analysis.category, None
     if analysis.category == "injection":
-        return "injection", render_template("injection", lang)
+        return "injection", template_reply("injection", lang)
 
     questions = analysis.questions[: cfg.max_questions]
     items = [_answer(q, lang, deps) for q in questions]
     if all(item.answer is None for item in items):
-        return "not_found", render_template("all_not_found", lang)
+        return "not_found", template_reply("all_not_found", lang)
     truncated = cfg.max_questions if len(analysis.questions) > cfg.max_questions else None
-    return "answered", compose_answers(items, lang, truncated, attached)
+    return "answered", answers_reply(items, lang, truncated, attached)
 
 
-def _send(email: dict, reply: str, deps: Deps, idempotency_key: str) -> None:
+def _send(email: dict, reply: Reply, deps: Deps, idempotency_key: str) -> None:
     deps.client.send(
         from_=deps.config.mail_from,
         to=mail_rules.sender_address(email),
         subject=reply_subject(email.get("subject")),
-        text=reply,
+        text=reply.text,
+        html=reply.html,
         headers=thread_headers(email),
         idempotency_key=idempotency_key,
     )
@@ -151,7 +153,7 @@ def _give_up(email: dict, deps: Deps, now: float) -> None:
         )
         return
     try:
-        _send(email, render_template("busy", lang), deps, idempotency_key=f"busy-{resend_id}")
+        _send(email, template_reply("busy", lang), deps, idempotency_key=f"busy-{resend_id}")
     except Exception as exc:  # noqa: BLE001 - 发信通道本身故障，只能记录
         log.exception("邮件 %s 的繁忙提示发送失败", resend_id)
         mail_log.finish(

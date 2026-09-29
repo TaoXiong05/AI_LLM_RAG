@@ -68,6 +68,17 @@ def test_send_posts_body_and_idempotency_key():
     }
 
 
+def test_send_includes_html_when_given():
+    seen = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen["body"] = json.loads(request.content)
+        return httpx.Response(200, json={"id": "sent2"})
+
+    _client(handler).send(from_="S <s@x.com>", to="a@y.com", subject="s", text="t", html="<p>t</p>")
+    assert seen["body"]["html"] == "<p>t</p>" and seen["body"]["text"] == "t"
+
+
 def test_http_errors_raise():
     client = _client(lambda request: httpx.Response(500, json={"message": "boom"}))
     try:

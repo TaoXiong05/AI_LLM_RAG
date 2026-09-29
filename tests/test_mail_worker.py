@@ -138,8 +138,17 @@ def test_answers_question_from_kb():
     assert "回答：请在订单页申请 [1]" in sent["text"]
     assert "参考来源：[1] faq.pdf" in sent["text"]
     assert sent["text"].endswith(TEMPLATES["zh"]["signature"])
+    # 同时发送 HTML 版本
+    assert "请在订单页申请" in sent["html"] and "faq.pdf" in sent["html"]
+    assert "问题 1" in sent["html"] and "RAG 智能客服" in sent["html"]
     assert mail_log.get_status(deps.engine, "e1") == ("replied", 0)
     assert _category(deps) == "answered"
+
+
+def test_template_replies_also_send_html():
+    deps = make_deps([make_email(body="")], FakeLLM({}))
+    poll_once(deps)
+    assert deps.client.sent[0]["html"].startswith("<!doctype html>")
 
 
 def test_sources_list_the_citation_numbers_per_file():

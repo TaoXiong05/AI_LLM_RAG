@@ -17,7 +17,7 @@ AUTO_HEADERS = ("list-id", "list-unsubscribe", "x-autoreply", "x-autorespond")
 
 # 回复历史的起始行：Gmail/Outlook/QQ 等客户端的常见写法，遇到后其后内容全部丢弃
 QUOTE_HEADER = re.compile(
-    r"^\s*(on\s.+wrote:|在.+写道[:：]|-{2,}\s*original message\s*-{2,}|-{2,}\s*原始邮件\s*-{2,}"
+    r"^\s*(on\s.+wrote:|.*写道[:：]|-{2,}\s*original message\s*-{2,}|-{2,}\s*原始邮件\s*-{2,}"
     r"|from:\s.+|发件人[:：].+)\s*$",
     re.I,
 )

@@ -73,6 +73,9 @@ def test_strip_quoted_removes_history():
     text = "How do I reset?\n\nOn Mon, Sep 28, 2026 at 9:00 AM Support <support@taoxiong.site> wrote:\n> old answer"
     assert strip_quoted(text) == "How do I reset?"
     assert strip_quoted("问题一\n\n在 2026年9月28日 写道：\n> 旧内容") == "问题一"
+    # 中文界面 Gmail 的引用行："<发件人> 于<日期>写道："
+    gmail_zh = "问题二\n\nRAG Support <support@taoxiong.site> 于2026年9月29日周二 12:46写道：\n> 旧回复"
+    assert strip_quoted(gmail_zh) == "问题二"
     assert strip_quoted("line1\n> quoted\nline2") == "line1\nline2"
 
 
