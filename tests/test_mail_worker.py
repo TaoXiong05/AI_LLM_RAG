@@ -326,6 +326,29 @@ def test_exhausted_pending_row_goes_straight_to_busy():
     assert mail_log.get_status(deps.engine, "e1") == ("replied", 3)
 
 
+def test_unparseable_email_reaches_terminal_state():
+    from backend import mail_rules
+
+    deps = make_deps([make_email(text=None, html="data:text/html;base64,abc")], FakeLLM({}), max_retries=3)
+    original = mail_rules.extract_body
+
+    def boom(email):
+        raise ValueError("bad body")
+
+    mail_rules.extract_body = boom  # 临时让解析必然失败，模拟无法处理的邮件
+    try:
+        for _ in range(3):
+            poll_once(deps)
+        assert mail_log.get_status(deps.engine, "e1") == ("failed", 3)
+        assert _category(deps) == "give_up_error"
+        assert deps.client.sent == []
+        fetched = len(deps.client.fetched)
+        poll_once(deps)
+        assert len(deps.client.fetched) == fetched  # 终态不再读取详情
+    finally:
+        mail_rules.extract_body = original
+
+
 if __name__ == "__main__":
     for _name, _fn in list(globals().items()):
         if _name.startswith("test_"):

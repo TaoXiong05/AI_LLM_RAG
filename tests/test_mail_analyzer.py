@@ -82,6 +82,11 @@ def test_answer_without_citation_or_answered_false_is_not_answered():
     assert answer_question("q", CHUNKS, "zh", llm) == Answer(False, "", [])
 
 
+def test_non_list_questions_treated_as_empty():
+    llm = _llm_returning('{"category":"question","language":"zh","questions":"怎么退款"}')
+    assert analyze_email("s", "b", "zh", llm) == Analysis("other", "zh", [])
+
+
 if __name__ == "__main__":
     for _name, _fn in list(globals().items()):
         if _name.startswith("test_"):

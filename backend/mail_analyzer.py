@@ -83,7 +83,10 @@ def analyze_email(subject: str, body: str, fallback_lang: str, llm: LLMFn) -> An
     language = data.get("language")
     if language not in ("zh", "en"):
         language = fallback_lang
-    questions = [str(q).strip() for q in data.get("questions") or [] if str(q).strip()]
+    raw_questions = data.get("questions")
+    if not isinstance(raw_questions, list):  # 字符串等非列表会被逐字符拆开，按无问题处理
+        raw_questions = []
+    questions = [str(q).strip() for q in raw_questions if str(q).strip()]
     if category == "question" and not questions:
         category = "other"
     return Analysis(category, language, questions)

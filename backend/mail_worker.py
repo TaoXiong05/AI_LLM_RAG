@@ -125,14 +125,22 @@ def _give_up(email: dict, deps: Deps, now: float) -> None:
     """重试次数用尽：给正常来信的人回一封"系统繁忙"；若连发信都失败，只记日志。"""
     resend_id = email["id"]
     cfg = deps.config
-    if (
-        not mail_rules.is_addressed_to(email, cfg.mail_address)
-        or mail_rules.is_auto_generated(email, cfg.mail_address)
-        or mail_rules.is_spoofed(email)
-    ):
-        mail_log.finish(deps.engine, resend_id, status=mail_log.FAILED, category="gave_up", now=now)
+    try:
+        if (
+            not mail_rules.is_addressed_to(email, cfg.mail_address)
+            or mail_rules.is_auto_generated(email, cfg.mail_address)
+            or mail_rules.is_spoofed(email)
+        ):
+            mail_log.finish(deps.engine, resend_id, status=mail_log.FAILED, category="gave_up", now=now)
+            return
+        lang = mail_rules.detect_lang(f"{email.get('subject') or ''}\n{mail_rules.extract_body(email)}")
+    except Exception as exc:  # noqa: BLE001 - 邮件本身无法解析：直接置为终态，避免每次轮询都重试
+        log.exception("邮件 %s 收尾前的解析失败", resend_id)
+        mail_log.finish(
+            deps.engine, resend_id, status=mail_log.FAILED, category="give_up_error",
+            now=now, error=repr(exc)[:1000],
+        )
         return
-    lang = mail_rules.detect_lang(f"{email.get('subject') or ''}\n{mail_rules.extract_body(email)}")
     try:
         _send(email, render_template("busy", lang), deps, idempotency_key=f"busy-{resend_id}")
     except Exception as exc:  # noqa: BLE001 - 发信通道本身故障，只能记录

@@ -88,10 +88,13 @@ def html_to_text(markup: str) -> str:
     """HTML 转纯文本。Resend 可能以 data URI 形式返回 html（html_format = data_uri），先解码。"""
     if markup.startswith("data:"):
         header, _, payload = markup.partition(",")
-        if ";base64" in header:
-            markup = base64.b64decode(payload).decode("utf-8", "replace")
-        else:
-            markup = unquote(payload)
+        try:
+            if ";base64" in header:
+                markup = base64.b64decode(payload).decode("utf-8", "replace")
+            else:
+                markup = unquote(payload)
+        except ValueError:  # binascii.Error 是 ValueError 子类：base64 损坏的正文按空处理
+            markup = ""
     parser = _TextExtractor()
     parser.feed(markup)
     parser.close()
@@ -113,7 +116,8 @@ def strip_quoted(text: str) -> str:
 
 def extract_body(email: dict) -> str:
     """最新一封邮件的正文（纯文本、已剥离引用历史）。"""
-    text = email.get("text") or html_to_text(email.get("html") or "")
+    # 纯空白的 text 部分视为没有，回退到 html
+    text = (email.get("text") or "").strip() or html_to_text(email.get("html") or "")
     return strip_quoted(text)
 
 

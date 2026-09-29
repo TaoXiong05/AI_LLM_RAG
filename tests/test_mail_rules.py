@@ -96,6 +96,14 @@ def test_has_attachments_ignores_inline_images():
     assert not has_attachments({})
 
 
+def test_html_to_text_malformed_base64_data_uri_is_empty():
+    assert html_to_text("data:text/html;base64,abc") == ""
+
+
+def test_extract_body_whitespace_text_falls_back_to_html():
+    assert extract_body({"text": "  \n", "html": "<p>html</p>"}) == "html"
+
+
 def test_precheck():
     assert precheck("", has_attachments=False, max_chars=100) == "empty"
     assert precheck("  ", has_attachments=True, max_chars=100) == "attachment_only"
