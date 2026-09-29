@@ -86,6 +86,8 @@ jobs:
             COLLECTION_NAME=${{ vars.COLLECTION_NAME }}
             TOP_K=${{ vars.TOP_K }}
             CLEAR_KB_PASSWORD=${{ secrets.CLEAR_KB_PASSWORD }}
+            RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
+            MAIL_FROM=${{ vars.MAIL_FROM }}
             EOF
             cd /home/deploy/ai-llm-rag
             docker compose pull

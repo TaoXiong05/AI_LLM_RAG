@@ -18,6 +18,7 @@
 - 知识库管理:查看已入库文档列表、删除单个文档、清空整个知识库(均有二次确认)
 - 界面默认英文,侧边栏一键切换中文
 - LLM / Embedding 服务商可配置,默认接入阿里云百炼(OpenAI 兼容接口)
+- 邮件自动回复:向 `support@taoxiong.site` 发邮件提问,后台 worker 通过 Resend 收信,拆分问题逐一在知识库检索并自动回信;检索不到的问题明确告知,不会用通用知识编造(详见 `docs/superpowers/specs/2026-09-29-email-auto-reply-design.md`)
 
 ### 技术栈
 
@@ -43,7 +44,13 @@ AI_LLM_RAG/
     ├── parser.py             # PDF/DOCX/TXT 文本解析
     ├── chunker.py             # 文本切片（RecursiveCharacterTextSplitter，chunk_size=500, overlap=50）
     ├── db.py                  # Postgres/pgvector 读写、知识库管理
-    └── rag_chain.py           # 检索 + 拼 Prompt + 流式生成回答
+    ├── rag_chain.py           # 检索 + 拼 Prompt + 流式生成回答
+    ├── resend_client.py       # Resend 收发信 API
+    ├── mail_rules.py          # 邮件规则：正文提取、自动邮件/伪造识别、预检
+    ├── mail_templates.py      # 回复模板（中/英）与正文拼装
+    ├── mail_log.py            # email_log 表：去重、每日限额、重试
+    ├── mail_analyzer.py       # LLM 分类拆题、逐题基于知识库作答
+    └── mail_worker.py         # 邮件 worker 入口：python -m backend.mail_worker
 ```
 
 ### 本地运行
@@ -104,6 +111,7 @@ A document Q&A **RAG (Retrieval-Augmented Generation)** demo built with **Stream
 - Knowledge base management: list ingested documents, delete a single document, or clear the whole knowledge base (each with a confirmation step)
 - English UI by default, with a one-click toggle to Chinese in the sidebar
 - Configurable LLM / embedding provider — defaults to Alibaba Cloud Bailian (OpenAI-compatible API)
+- Email auto-reply: send questions to `support@taoxiong.site`, a background worker receives via Resend, splits questions, retrieves answers from the knowledge base, and auto-responds; unanswered questions are clearly marked, never filled with generic knowledge (see `docs/superpowers/specs/2026-09-29-email-auto-reply-design.md`)
 
 ### Tech Stack
 
@@ -129,7 +137,13 @@ AI_LLM_RAG/
     ├── parser.py             # PDF/DOCX/TXT text extraction
     ├── chunker.py             # Text chunking (RecursiveCharacterTextSplitter, chunk_size=500, overlap=50)
     ├── db.py                  # Postgres/pgvector I/O, knowledge base management
-    └── rag_chain.py           # Retrieval + prompt assembly + streaming generation
+    ├── rag_chain.py           # Retrieval + prompt assembly + streaming generation
+    ├── resend_client.py       # Resend email send/receive API
+    ├── mail_rules.py          # Email rules: body extraction, auto-detect forwarded/spoofed, pre-checks
+    ├── mail_templates.py      # Reply templates (ZH/EN) and body assembly
+    ├── mail_log.py            # email_log table: deduplication, daily quota, retries
+    ├── mail_analyzer.py       # LLM question classification, per-question KB answering
+    └── mail_worker.py         # Email worker entry point: python -m backend.mail_worker
 ```
 
 ### Run Locally
