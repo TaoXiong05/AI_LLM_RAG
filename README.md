@@ -67,7 +67,8 @@ AI_LLM_RAG/
 3. 启动应用
 
    ```bash
-   streamlit run app.py
+   python -m streamlit run app.py
+
    ```
 
    浏览器打开 `http://localhost:8501`，在侧边栏上传文档、点击「处理并构建向量库」，然后就可以在下方提问。
