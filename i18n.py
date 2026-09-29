@@ -56,13 +56,24 @@ STRINGS = {
         "Check your .env / Secrets — make sure the placeholder text was replaced with your "
         "real API key.",
         "app_title": "📚 Document Q&A RAG Demo",
-        "app_description": "Upload PDF / DOCX / TXT / IMAGE files in the sidebar, then ask questions "
-        "below — answers are generated from your documents' content, with cited sources. "
-        "It also runs as a fully automated email support desk: send your questions to "
-        "support@taoxiong.site and an AI agent reads the email, answers each question from the "
-        "knowledge base (and says so honestly when it can't find an answer), then replies on its own "
-        "within a couple of minutes — around the clock, no human in the loop. "
-        "Built with Streamlit + PostgreSQL (pgvector) + LangChain + Resend.",
+        "app_lede": "Ask questions about your documents and get answers grounded in them — "
+        "every claim traced back to the passage it came from.",
+        "channel_web_kicker": "On this page",
+        "channel_web_title": "Ask your documents",
+        "channel_web_steps": [
+            "Upload PDF, DOCX, TXT or image files in the sidebar",
+            "Click “{process}” to index them",
+            "Ask below — answers cite the exact passages they use",
+        ],
+        "channel_mail_kicker": "By email",
+        "channel_mail_title": "AI support desk",
+        "channel_mail_badge": "Fully automated · 24/7",
+        "channel_mail_points": [
+            "Reads your email and splits it into separate questions",
+            "Answers each one from the knowledge base — and says so honestly when it can't",
+            "Replies on its own within a couple of minutes, no human in the loop",
+        ],
+        "stack_label": "Built with",
         "privacy_notice": "This is a public demo site. Please do not upload documents "
         "containing private, confidential, or otherwise sensitive information.",
         "chat_input_placeholder": "Ask a question",
@@ -127,10 +138,23 @@ STRINGS = {
         "api_key_error": "OPENAI_API_KEY 未配置或包含非法字符（必须是纯 ASCII）。请检查 .env / Secrets"
         "里的取值，确认占位文字已经替换成你真实的 API Key。",
         "app_title": "📚 文档问答 RAG Demo",
-        "app_description": "在侧边栏上传 PDF / DOCX / TXT / 图片文件，然后在下方提问——回答会基于你上传文档的内容生成，并标注引用来源。"
-        "它同时也是一个全自动的邮件客服：把问题发到 support@taoxiong.site，AI 客服会自动读信、拆分问题、"
-        "逐条依据知识库作答（查不到的会如实说明），并在几分钟内自动回信——7×24 小时在线，全程无需人工。"
-        "技术栈：Streamlit + PostgreSQL（pgvector）+ LangChain + Resend。",
+        "app_lede": "针对你的文档提问，获得有据可查的回答——每个结论都能追溯到原文段落。",
+        "channel_web_kicker": "在本页面",
+        "channel_web_title": "向文档提问",
+        "channel_web_steps": [
+            "在左侧栏上传 PDF、DOCX、TXT 或图片文件",
+            "点击「{process}」建立索引",
+            "在下方提问——回答会标注所引用的原文段落",
+        ],
+        "channel_mail_kicker": "通过邮件",
+        "channel_mail_title": "AI 邮件客服",
+        "channel_mail_badge": "全自动 · 7×24 小时",
+        "channel_mail_points": [
+            "自动读信，把邮件拆分成独立的问题",
+            "逐条依据知识库作答，查不到的会如实说明",
+            "几分钟内自动回信，全程无需人工",
+        ],
+        "stack_label": "技术栈",
         "privacy_notice": "这是一个公开的 Demo 站点，请勿上传任何涉及隐私、机密或敏感信息的文档。",
         "chat_input_placeholder": "请输入问题",
         "searching_status": "问题已提交，正在检索知识库…",

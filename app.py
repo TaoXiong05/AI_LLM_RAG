@@ -99,13 +99,50 @@ st.markdown(
     [data-testid="stExpander"] { border: 1px solid rgba(42,33,22,0.14); border-radius: 10px; background-color: var(--card); }
 
     /* ---- 顶部标牌 ---- */
+    .desk-hero { border-bottom: 2px solid var(--ink); padding-bottom: 1.1rem; margin-bottom: 1.6rem; }
     .desk-plate {
         display: flex; justify-content: space-between; align-items: flex-end; gap: 1.5rem;
-        border-bottom: 2px solid var(--ink); padding-bottom: 1rem; margin-bottom: 1.6rem; flex-wrap: wrap;
+        margin-bottom: 1.1rem; flex-wrap: wrap;
     }
     .desk-eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--brass); margin-bottom: 0.3rem; }
     .desk-title { font-size: 2rem; margin: 0; }
-    .desk-subtitle { color: var(--ink-muted); font-size: 0.94rem; line-height: 1.6; margin: 0.35rem 0 0 0; max-width: 46rem; }
+    .desk-lede { color: var(--ink-muted); font-size: 1rem; line-height: 1.6; margin: 0.4rem 0 0 0; max-width: 46rem; }
+
+    /* 两种提问方式：本页问答 / 邮件客服，并排两张卡片，窄屏自动叠成一列 */
+    .desk-channels { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem; }
+    .channel-card {
+        background-color: var(--card); border: 1px solid rgba(42,33,22,0.14); border-radius: 12px;
+        border-top: 3px solid var(--rule); padding: 0.95rem 1.2rem 1rem;
+    }
+    .channel-card.mail { border-top-color: var(--brass); }
+    .channel-head { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.65rem; }
+    .channel-icon {
+        width: 2.3rem; height: 2.3rem; flex-shrink: 0; border-radius: 50%; background-color: var(--paper);
+        display: flex; align-items: center; justify-content: center; font-size: 1.15rem;
+    }
+    .channel-kicker { font-family: 'IBM Plex Mono', monospace; font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--brass); }
+    .channel-title { font-family: 'Libre Caslon Text', Georgia, serif; font-size: 1.1rem; font-weight: 700; line-height: 1.25; }
+    .channel-badge {
+        margin-left: auto; white-space: nowrap; font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; font-weight: 600;
+        color: var(--success) !important; background-color: rgba(75,112,82,0.1); border: 1px solid rgba(75,112,82,0.32);
+        border-radius: 999px; padding: 0.2rem 0.65rem;
+    }
+    a.channel-address {
+        display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 0.95rem; font-weight: 600;
+        color: var(--brass) !important; text-decoration: none; background-color: var(--paper);
+        border: 1px dashed var(--drawer-border); border-radius: 8px; padding: 0.35rem 0.75rem; margin-bottom: 0.55rem;
+    }
+    a.channel-address:hover { border-style: solid; border-color: var(--brass); }
+    .channel-list { margin: 0; padding-left: 1.2rem; }
+    .channel-list li { font-size: 0.88rem; line-height: 1.55; color: var(--ink-muted); margin: 0.22rem 0; }
+    .channel-list li::marker { color: var(--brass); font-weight: 600; }
+
+    .desk-stack { display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; margin-top: 0.9rem; }
+    .stack-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-right: 0.2rem; }
+    .stack-chip {
+        font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--ink-muted);
+        border: 1px solid rgba(42,33,22,0.16); border-radius: 6px; padding: 0.12rem 0.5rem;
+    }
     .desk-stats { display: flex; gap: 0.6rem; flex-wrap: wrap; }
     .desk-stat-chip {
         font-family: 'IBM Plex Mono', monospace; font-size: 0.76rem; color: var(--ink);
@@ -367,18 +404,51 @@ with st.sidebar:
 
 
 # ---------- 主区：书桌标牌 ----------
+SUPPORT_EMAIL = settings.mail_address
+TECH_STACK = ["Streamlit", "PostgreSQL · pgvector", "LangChain", "Gemini", "Resend"]
+web_steps = "".join(f"<li>{s.format(process=t['process_button'])}</li>" for s in t["channel_web_steps"])
+mail_points = "".join(f"<li>{s}</li>" for s in t["channel_mail_points"])
+stack_chips = "".join(f'<span class="stack-chip">{name}</span>' for name in TECH_STACK)
+# 注意：st.markdown 里的 HTML 不能出现空行，否则后面的内容会被当成 Markdown 解析
 st.markdown(
     f"""
-    <div class="desk-plate">
-        <div>
-            <div class="desk-eyebrow">{t['app_eyebrow']}</div>
-            <h1 class="desk-title">{t['app_title']}</h1>
-            <p class="desk-subtitle">{t['app_description']}</p>
+    <div class="desk-hero">
+        <div class="desk-plate">
+            <div>
+                <div class="desk-eyebrow">{t['app_eyebrow']}</div>
+                <h1 class="desk-title">{t['app_title']}</h1>
+                <p class="desk-lede">{t['app_lede']}</p>
+            </div>
+            <div class="desk-stats">
+                <span class="desk-stat-chip">{t['kb_doc_count'].format(n=kb_doc_count)}</span>
+                <span class="desk-stat-chip">{t['kb_chunk_count'].format(n=kb_chunk_count)}</span>
+            </div>
         </div>
-        <div class="desk-stats">
-            <span class="desk-stat-chip">{t['kb_doc_count'].format(n=kb_doc_count)}</span>
-            <span class="desk-stat-chip">{t['kb_chunk_count'].format(n=kb_chunk_count)}</span>
+        <div class="desk-channels">
+            <div class="channel-card">
+                <div class="channel-head">
+                    <span class="channel-icon">💬</span>
+                    <div>
+                        <div class="channel-kicker">{t['channel_web_kicker']}</div>
+                        <div class="channel-title">{t['channel_web_title']}</div>
+                    </div>
+                </div>
+                <ol class="channel-list">{web_steps}</ol>
+            </div>
+            <div class="channel-card mail">
+                <div class="channel-head">
+                    <span class="channel-icon">✉️</span>
+                    <div>
+                        <div class="channel-kicker">{t['channel_mail_kicker']}</div>
+                        <div class="channel-title">{t['channel_mail_title']}</div>
+                    </div>
+                    <span class="channel-badge">{t['channel_mail_badge']}</span>
+                </div>
+                <a class="channel-address" href="mailto:{SUPPORT_EMAIL}">{SUPPORT_EMAIL}</a>
+                <ul class="channel-list">{mail_points}</ul>
+            </div>
         </div>
+        <div class="desk-stack"><span class="stack-label">{t['stack_label']}</span>{stack_chips}</div>
     </div>
     """,
     unsafe_allow_html=True,
