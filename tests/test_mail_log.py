@@ -8,7 +8,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 
 from backend import mail_log
 
@@ -35,6 +35,9 @@ def test_bump_retry_then_finish():
     assert mail_log.bump_retry(e, "r1", error="boom", now=102.0) == 2
     mail_log.finish(e, "r1", status="replied", category="busy", now=103.0)
     assert mail_log.get_status(e, "r1") == ("replied", 2)
+    # 终态不带 error 时保留最后一次重试的失败原因，方便事后排查
+    with e.connect() as conn:
+        assert conn.execute(text("SELECT error FROM email_log WHERE resend_id = 'r1'")).scalar() == "boom"
 
 
 def test_count_replies_filters():

@@ -31,3 +31,22 @@ jobs:
             echo "=== email_log (no sender/subject) ==="
             docker exec ai-llm-rag-db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "select to_timestamp(created_ts) as created, category, status, retry_count, left(error, 400) as error from email_log order by created_ts desc limit 10;"' \
               | sed -E 's/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/<email>/g'
+            echo "=== worker model config (non-secret) ==="
+            docker exec ai-llm-rag-mail-worker sh -c 'echo "OPENAI_BASE_URL=$OPENAI_BASE_URL"; echo "CHAT_MODEL=$CHAT_MODEL"; echo "EMBED_MODEL=$EMBED_MODEL"; echo "COLLECTION_NAME=$COLLECTION_NAME"'
+            echo "=== networks: app vs worker ==="
+            for c in ai-llm-rag-app ai-llm-rag-mail-worker; do
+              echo "$c: $(docker inspect -f '{{range $k, $v := .NetworkSettings.Networks}}{{$k}} {{end}}' $c)"
+            done
+            echo "=== live checks inside the worker container ==="
+            docker exec -i ai-llm-rag-mail-worker python - <<'PY'
+            def check(name, fn):
+                try:
+                    print(f"[OK]   {name}: {fn()}")
+                except Exception as exc:
+                    print(f"[FAIL] {name}: {type(exc).__name__}: {str(exc)[:400]}")
+            from backend import db, mail_worker
+            deps = mail_worker.build_deps()
+            check("llm", lambda: deps.llm([{"role": "user", "content": "Reply with the JSON {\"ok\": true} only."}])[:200])
+            check("retrieve", lambda: f"{len(deps.retrieve('test'))} chunk(s)")
+            check("kb sources", lambda: f"{len(db.list_sources())} document(s)")
+            PY

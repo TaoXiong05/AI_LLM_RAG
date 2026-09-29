@@ -85,7 +85,8 @@ def finish(
             text(
                 """
                 UPDATE email_log
-                SET status = :status, category = :category, error = :error, updated_ts = :now
+                SET status = :status, category = :category,
+                    error = COALESCE(:error, error), updated_ts = :now
                 WHERE resend_id = :id
                 """
             ),
