@@ -1,0 +1,33 @@
+name: Diagnose mail worker
+
+# 手动触发：在 GitHub Actions 页面点 "Run workflow"，查看邮件 worker 的状态与最近的失败原因。
+# 仓库是公开的，Actions 日志任何人可见：这里只输出分类/状态/重试次数/错误摘要，不输出发件人和主题。
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Worker status, recent failures and email_log summary
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -u
+            echo "=== container ==="
+            docker ps -a --filter name=ai-llm-rag-mail-worker --format '{{.Names}} {{.Image}} {{.Status}}'
+            echo "=== worker log (last 2h, errors and lifecycle only) ==="
+            docker logs ai-llm-rag-mail-worker --since 2h 2>&1 \
+              | grep -E "启动|失败|出错|ERROR|WARNING|Error|Exception|Traceback|  File |^[A-Za-z_.]+(Error|Exception)" \
+              | sed -E 's/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/<email>/g' \
+              | tail -80
+            echo "=== email_log (no sender/subject) ==="
+            docker exec ai-llm-rag-db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "select to_timestamp(created_ts) as created, category, status, retry_count, left(error, 400) as error from email_log order by created_ts desc limit 10;"' \
+              | sed -E 's/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/<email>/g'
