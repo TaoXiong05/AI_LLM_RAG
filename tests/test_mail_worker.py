@@ -241,11 +241,17 @@ def test_precheck_templates():
 
 
 def test_llm_categories():
-    for category in ("spam", "abuse", "other"):
+    for category in ("spam", "abuse"):
         deps = make_deps([make_email()], FakeLLM({"category": category, "language": "zh", "questions": []}))
         poll_once(deps)
         assert deps.client.sent == [], category
         assert _category(deps) == category
+    # 感谢 / 问候 / 没识别出问题：回一封"怎么提问"的提示
+    deps = make_deps([make_email()], FakeLLM({"category": "other", "language": "zh", "questions": []}))
+    poll_once(deps)
+    assert deps.client.sent[0]["text"] == render_template("no_question", "zh")
+    assert _category(deps) == "other"
+    assert mail_log.get_status(deps.engine, "e1") == ("replied", 0)
     deps = make_deps([make_email()], FakeLLM({"category": "injection", "language": "en", "questions": []}))
     poll_once(deps)
     assert deps.client.sent[0]["text"] == render_template("injection", "en")

@@ -107,8 +107,12 @@ def decide(email: dict, deps: Deps, now: float) -> tuple[str, Reply | None]:
 
     analysis = mail_analyzer.analyze_email(subject, body, lang, deps.llm)
     lang = analysis.language
-    if analysis.category in ("spam", "abuse", "other"):
+    # 垃圾广告 / 辱骂：回复只会确认地址有效或激化对方，保持静默
+    if analysis.category in ("spam", "abuse"):
         return analysis.category, None
+    # 感谢、问候或没识别出问题：回一封提示，告诉对方怎么提问（分拣误判时也能兜底）
+    if analysis.category == "other":
+        return "other", template_reply("no_question", lang)
     if analysis.category == "injection":
         return "injection", template_reply("injection", lang)
 

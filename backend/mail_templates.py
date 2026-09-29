@@ -26,6 +26,9 @@ TEMPLATES = {
         "sender_limit": "您好，\n\n您今天的自动回复次数已达上限（{n} 封），请明天再来信。",
         "all_not_found": "您好，\n\n很抱歉，知识库中没有检索到与您的问题相关的内容。",
         "busy": "您好，\n\n系统暂时繁忙，未能处理您的邮件，请稍后重新发送。",
+        "no_question": "您好，\n\n感谢来信！本邮箱由 AI 客服自动处理，只回答与知识库内容相关的问题，"
+        "这次没有在您的邮件中识别到具体问题。\n\n如果您有想了解的内容，直接回复本邮件，把问题完整写出来即可，"
+        "例如：“什么是 MCP 服务器？”",
         "signature": "—\n本邮件由 AI 根据知识库内容自动生成，仅供参考。",
         "brand": "RAG 智能客服",
         "question_label": "问题 {n}",
@@ -49,6 +52,10 @@ TEMPLATES = {
         "sender_limit": "Hello,\n\nYou have reached today's limit of {n} automatic replies. Please write again tomorrow.",
         "all_not_found": "Hello,\n\nSorry, no information related to your question was found in the knowledge base.",
         "busy": "Hello,\n\nThe system is temporarily busy and could not process your email. Please try again later.",
+        "no_question": "Hello,\n\nThanks for your email! This mailbox is handled automatically by an AI assistant "
+        "that answers questions about the knowledge base, and we couldn't find a specific question in your message."
+        "\n\nIf there's something you'd like to know, just reply to this email and write out the full question, "
+        "for example: \"What is an MCP server?\"",
         "signature": "—\nThis email was generated automatically by AI from the knowledge base and is for reference only.",
         "brand": "RAG Support",
         "question_label": "Question {n}",
