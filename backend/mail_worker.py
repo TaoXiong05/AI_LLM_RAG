@@ -56,8 +56,17 @@ def _answer(question: str, lang: str, deps: Deps) -> AnswerItem:
     result = mail_analyzer.answer_question(question, chunks, lang, deps.llm)
     if not result.answered:
         return AnswerItem(question, None, [])
-    sources = [chunks[i - 1][0].metadata.get("source", "") for i in result.cited]
-    return AnswerItem(question, result.answer, [s for s in dict.fromkeys(sources) if s])
+    # 参考来源按文件归并，并带上正文里对应的引用编号，例如 "[1][3] faq.pdf"
+    indices_by_source: dict[str, list[int]] = {}
+    for i in result.cited:
+        source = chunks[i - 1][0].metadata.get("source", "")
+        if source:
+            indices_by_source.setdefault(source, []).append(i)
+    sources = [
+        "".join(f"[{i}]" for i in sorted(indices)) + f" {source}"
+        for source, indices in indices_by_source.items()
+    ]
+    return AnswerItem(question, result.answer, sources)
 
 
 def decide(email: dict, deps: Deps, now: float) -> tuple[str, str | None]:

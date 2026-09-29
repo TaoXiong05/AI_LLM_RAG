@@ -136,10 +136,23 @@ def test_answers_question_from_kb():
     assert sent["headers"] == {"In-Reply-To": "<e1@example.com>", "References": "<e1@example.com>"}
     assert sent["idempotency_key"] == "reply-e1"
     assert "回答：请在订单页申请 [1]" in sent["text"]
-    assert "参考来源：faq.pdf" in sent["text"]
+    assert "参考来源：[1] faq.pdf" in sent["text"]
     assert sent["text"].endswith(TEMPLATES["zh"]["signature"])
     assert mail_log.get_status(deps.engine, "e1") == ("replied", 0)
     assert _category(deps) == "answered"
+
+
+def test_sources_list_the_citation_numbers_per_file():
+    chunks = [
+        (Document(page_content="片段一", metadata={"source": "a.docx"}), 0.1),
+        (Document(page_content="片段二", metadata={"source": "b.pdf"}), 0.2),
+        (Document(page_content="片段三", metadata={"source": "a.docx"}), 0.3),
+    ]
+    llm = _question_llm("什么是 MCP？", answers={"什么是 MCP？": "定义 [3]。架构 [1][2]。"})
+    deps = make_deps([make_email()], llm, kb={"什么是 MCP？": chunks})
+    poll_once(deps)
+    # 按首次引用顺序列出文件，每个文件带上正文中用到的全部编号
+    assert "参考来源：[1][3] a.docx、[2] b.pdf" in deps.client.sent[0]["text"]
 
 
 def test_mixed_found_and_not_found():
