@@ -38,6 +38,12 @@ def test_parse_json_object_tolerates_code_fences():
     assert parse_json_object('```json\n{"a": 1}\n```') == {"a": 1}
 
 
+def test_parse_json_object_allows_raw_newlines_in_strings():
+    # 多段落回答：字符串里是真实换行而不是 \n 转义
+    text = '{"answered": true, "answer": "第一段 [1]\n第二段 [2]"}'
+    assert parse_json_object(text) == {"answered": True, "answer": "第一段 [1]\n第二段 [2]"}
+
+
 def test_parse_json_object_raises_without_json():
     for bad in ("sorry, I can't", "{not json}"):
         try:

@@ -63,7 +63,8 @@ def parse_json_object(text: str) -> dict:
     if not match:
         raise ValueError(f"LLM 输出中没有 JSON 对象: {text[:200]!r}")
     try:
-        data = json.loads(match.group(0))
+        # strict=False：模型常在多段落回答的字符串里直接输出换行，严格模式会把这种 JSON 判为非法
+        data = json.loads(match.group(0), strict=False)
     except json.JSONDecodeError as exc:
         raise ValueError(f"LLM 输出的 JSON 无法解析: {text[:200]!r}") from exc
     if not isinstance(data, dict):
