@@ -78,7 +78,9 @@ class Settings:
 
 def get_settings() -> Settings:
     return Settings(
-        pg_host=os.getenv("PG_HOST", "localhost"),
+        # 默认用 127.0.0.1 而不是 localhost：Windows 上 localhost 先解析成 IPv6 ::1，
+        # 而 WSL/Docker 里的 Postgres 只监听 IPv4，连接会卡到 TCP 超时（约 2–3 分钟）才回退。
+        pg_host=os.getenv("PG_HOST", "127.0.0.1"),
         pg_port=int(os.getenv("PG_PORT", "5432")),
         pg_database=os.getenv("PG_DATABASE", "ragdb"),
         pg_user=os.getenv("PG_USER", "postgres"),
