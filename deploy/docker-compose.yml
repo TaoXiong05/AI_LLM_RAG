@@ -35,6 +35,25 @@ services:
       - edge
       - rag_internal
 
+  mail-worker:
+    image: ghcr.io/taoxiong05/ai-llm-rag:latest
+    container_name: ai-llm-rag-mail-worker
+    restart: unless-stopped
+    command: ["python", "-m", "backend.mail_worker"]
+    env_file: .env
+    environment:
+      PG_HOST: db
+      PG_PORT: "5432"
+      PG_SSLMODE: disable
+    # 镜像自带的 HEALTHCHECK 探测的是 Streamlit 的 8501 端口，worker 没有这个端口
+    healthcheck:
+      disable: true
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - rag_internal
+
 volumes:
   pgdata:
 

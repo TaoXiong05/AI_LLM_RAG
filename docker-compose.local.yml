@@ -1,0 +1,23 @@
+# 本地开发用数据库：只启动 Postgres + pgvector，连接信息读取项目根目录的 .env（PG_USER / PG_PASSWORD / PG_DATABASE）。
+# 启动：docker compose -f docker-compose.local.yml up -d
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: ai-llm-rag-db-local
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+      POSTGRES_DB: ${PG_DATABASE}
+    volumes:
+      - pgdata-local:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  pgdata-local:
