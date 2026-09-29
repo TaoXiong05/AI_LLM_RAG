@@ -166,7 +166,21 @@ def handle_email(summary: dict, deps: Deps) -> None:
     if state is None and _too_old(summary, now, deps.config.max_age_hours):
         return
 
-    email = deps.client.get_received(resend_id)
+    try:
+        email = deps.client.get_received(resend_id)
+    except Exception as exc:  # noqa: BLE001 - 读取详情失败：没有正文和发件人，无法回信
+        if state is None:
+            # 尚未落日志：后续轮询会重试，由 max_age_hours 兜底
+            log.warning("读取邮件 %s 详情失败：%r", resend_id, exc)
+            return
+        retries = mail_log.bump_retry(deps.engine, resend_id, error=repr(exc)[:1000], now=now)
+        log.warning("读取邮件 %s 详情失败（第 %d 次）：%r", resend_id, retries, exc)
+        if retries >= deps.config.max_retries:
+            mail_log.finish(
+                deps.engine, resend_id, status=mail_log.FAILED, category="fetch_failed",
+                now=now, error=repr(exc)[:1000],
+            )
+        return
     mail_log.start(
         deps.engine, resend_id,
         message_id=email.get("message_id"),
@@ -174,6 +188,10 @@ def handle_email(summary: dict, deps: Deps) -> None:
         subject=email.get("subject"),
         now=now,
     )
+    if state and state[0] == mail_log.PENDING and state[1] >= deps.config.max_retries:
+        # 重试次数已用尽（例如上次收尾写日志失败）：不再重跑 decide，直接收尾
+        _give_up(email, deps, now)
+        return
     try:
         category, reply = decide(email, deps, now)
         if reply is not None:

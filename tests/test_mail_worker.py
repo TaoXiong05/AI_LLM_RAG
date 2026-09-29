@@ -4,6 +4,7 @@
     python tests/test_mail_worker.py
 """
 import json
+import logging
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -16,6 +17,9 @@ from sqlalchemy import create_engine, text
 from backend import mail_analyzer, mail_log
 from backend.mail_templates import TEMPLATES, render_template
 from backend.mail_worker import Deps, WorkerConfig, poll_once
+
+# 失败路径的测试会故意触发 log.exception / log.warning，静音日志以保持输出干净
+logging.disable(logging.CRITICAL)
 
 OWN = "support@taoxiong.site"
 NOW = 1_790_000_000.0  # 固定时钟：2026-09
@@ -46,6 +50,7 @@ class FakeClient:
         self.sent: list[dict] = []
         self.fetched: list[str] = []
         self.fail_send = False
+        self.fail_fetch = False
 
     def list_received(self, limit=100):
         # 与 Resend 一致：最新的在前
@@ -53,6 +58,8 @@ class FakeClient:
 
     def get_received(self, email_id):
         self.fetched.append(email_id)
+        if self.fail_fetch:
+            raise RuntimeError("fetch down")
         return self.emails[email_id]
 
     def send(self, **kwargs):
@@ -282,6 +289,41 @@ def test_skips_emails_older_than_max_age():
     assert deps.client.sent == []
     assert deps.client.fetched == []
     assert mail_log.get_status(deps.engine, "e1") is None
+
+
+def test_fetch_failure_on_pending_row_is_bounded():
+    deps = make_deps([make_email()], FakeLLM({}, fail=True), max_retries=3)
+    poll_once(deps)
+    assert mail_log.get_status(deps.engine, "e1") == ("pending", 1)
+    deps.client.fail_fetch = True
+    poll_once(deps)
+    poll_once(deps)
+    assert mail_log.get_status(deps.engine, "e1") == ("failed", 3)
+    assert _category(deps) == "fetch_failed"
+    assert deps.client.sent == []
+
+
+def test_fetch_failure_on_new_email_is_not_logged():
+    deps = make_deps([make_email()], FakeLLM({}))
+    deps.client.fail_fetch = True
+    poll_once(deps)
+    assert mail_log.get_status(deps.engine, "e1") is None
+    assert deps.client.sent == []
+
+
+def test_exhausted_pending_row_goes_straight_to_busy():
+    llm = _question_llm("怎么退款？", answers={"怎么退款？": "答 [1]"})
+    deps = make_deps([make_email()], llm, kb={"怎么退款？": CHUNK}, max_retries=3)
+    mail_log.start(deps.engine, "e1", message_id="<e1@example.com>", sender="alice@example.com", subject="咨询", now=NOW)
+    for _ in range(3):
+        mail_log.bump_retry(deps.engine, "e1", error="x", now=NOW)
+    assert mail_log.get_status(deps.engine, "e1") == ("pending", 3)
+    poll_once(deps)
+    [sent] = deps.client.sent
+    assert sent["idempotency_key"] == "busy-e1"
+    assert sent["text"] == render_template("busy", "zh")
+    assert llm.calls == 0
+    assert mail_log.get_status(deps.engine, "e1") == ("replied", 3)
 
 
 if __name__ == "__main__":
